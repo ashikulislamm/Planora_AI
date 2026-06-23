@@ -1,0 +1,20 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "main": "./src/server.js",
+  "type": "module",
+  "author": "",
+  "description": "",
+  "scripts": {
+    "dev": "node --env-file=.env --watch src/server.js",
+    "start": "node ./src/server.js"
+  },
+  "keywords": [],
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "express-error-toolkit": "^1.2.1",
+    "http-status-toolkit": "^2.0.0"
+  }
+}
