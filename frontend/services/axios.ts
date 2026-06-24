@@ -1,6 +1,14 @@
 import axios from "axios";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api";
+
+if (typeof window !== "undefined" && !process.env.NEXT_PUBLIC_API_URL) {
+  if (process.env.NODE_ENV === "production") {
+    console.error("Warning: NEXT_PUBLIC_API_URL environment variable is missing in production! API requests will fail or fallback to localhost.");
+  } else {
+    console.info("NEXT_PUBLIC_API_URL is not set; falling back to http://localhost:3000/api for local development.");
+  }
+}
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,

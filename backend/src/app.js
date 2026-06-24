@@ -16,7 +16,7 @@ app.use(helmet({
 
 // Enable CORS with support for credentials (cookies)
 const allowedOrigins = process.env.CLIENT_URL
-  ? process.env.CLIENT_URL.split(',').map(url => url.trim())
+  ? process.env.CLIENT_URL.split(',').map(url => url.trim().replace(/\/$/, ''))
   : ['http://localhost:5173'];
 
 app.use(
@@ -25,14 +25,17 @@ app.use(
       // Allow requests with no origin (like mobile apps, postman, curl)
       if (!origin) return callback(null, true);
       
-      if (allowedOrigins.indexOf(origin) !== -1 || allowedOrigins.includes('*')) {
+      const cleanOrigin = origin.trim().replace(/\/$/, '');
+      if (allowedOrigins.includes(cleanOrigin) || allowedOrigins.includes('*')) {
         callback(null, true);
       } else {
-        console.warn(`CORS blocked request from origin: ${origin}`);
-        callback(new Error(`CORS blocked request from origin: ${origin}. Add it to CLIENT_URL in env.`));
+        console.warn(`CORS blocked request from origin: ${origin}. Allowed origins:`, allowedOrigins);
+        callback(null, false);
       }
     },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
   })
 );
 
