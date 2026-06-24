@@ -13,12 +13,12 @@ const app = express();
 app.use(helmet());
 
 // Enable CORS with support for credentials (cookies)
-app.use(
+/*app.use(
   cors({
     origin: process.env.CLIENT_URL || 'http://localhost:5173',
     credentials: true,
   })
-);
+);*/
 
 // Development logging
 if (process.env.NODE_ENV !== 'production') {
