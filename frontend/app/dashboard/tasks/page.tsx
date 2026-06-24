@@ -14,7 +14,12 @@ import {
   Clock, 
   CheckSquare, 
   Search, 
-  ArrowUpDown
+  ArrowUpDown,
+  Calendar,
+  Folder,
+  AlertCircle,
+  X,
+  MessageSquare
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../../context/AuthContext";
@@ -39,6 +44,9 @@ const taskSchema = z.object({
     .min(1, "Description is required")
     .max(500, "Description is too long"),
   status: z.enum(["todo", "in-progress", "done"]),
+  priority: z.enum(["low", "medium", "high", "critical"]),
+  dueDate: z.string().optional().nullable().or(z.literal("")),
+  category: z.enum(["work", "personal", "study", "health"]),
 });
 
 type TaskFormValues = z.infer<typeof taskSchema>;
@@ -51,10 +59,16 @@ export default function MyTasksPage() {
 
   // Filters, search, and sorting states
   const [searchTerm, setSearchTerm] = useState("");
-  const [activeFilter, setActiveFilter] = useState<"all" | "todo" | "in-progress" | "done" | "pending">("all");
-  const [sortBy, setSortBy] = useState<"newest" | "oldest" | "alpha-asc" | "alpha-desc">("newest");
+  const [quickFilter, setQuickFilter] = useState<"all" | "today" | "upcoming" | "overdue" | "completed">("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "todo" | "in-progress" | "done">("all");
+  const [priorityFilter, setPriorityFilter] = useState<"all" | "low" | "medium" | "high" | "critical">("all");
+  const [categoryFilter, setCategoryFilter] = useState<"all" | "work" | "personal" | "study" | "health">("all");
+  const [sortBy, setSortBy] = useState<"newest" | "oldest" | "alpha-asc" | "alpha-desc" | "priority-asc" | "priority-desc" | "due-asc" | "due-desc">("newest");
+  
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
+  const [selectedTaskDetails, setSelectedTaskDetails] = useState<Task | null>(null);
+  const [logContent, setLogContent] = useState("");
 
   // Form Hooks
   const {
@@ -68,6 +82,9 @@ export default function MyTasksPage() {
       title: "",
       description: "",
       status: "todo",
+      priority: "medium",
+      category: "personal",
+      dueDate: "",
     },
   });
 
@@ -86,6 +103,9 @@ export default function MyTasksPage() {
       setEditValue("title", editingTask.title);
       setEditValue("description", editingTask.description);
       setEditValue("status", editingTask.status);
+      setEditValue("priority", editingTask.priority || "medium");
+      setEditValue("category", editingTask.category || "personal");
+      setEditValue("dueDate", editingTask.dueDate ? editingTask.dueDate.split("T")[0] : "");
     }
   }, [editingTask, setEditValue]);
 
@@ -117,10 +137,13 @@ export default function MyTasksPage() {
   const updateTaskMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<Task> }) =>
       taskService.updateTask(id, data),
-    onSuccess: () => {
+    onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       success("Task updated successfully!");
       setEditingTask(null);
+      if (selectedTaskDetails?._id === res.data._id) {
+        setSelectedTaskDetails(res.data);
+      }
     },
     onError: (err: any) => {
       error(err.response?.data?.message || "Failed to update task");
@@ -133,9 +156,37 @@ export default function MyTasksPage() {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       success("Task deleted successfully!");
       setDeletingTaskId(null);
+      setSelectedTaskDetails(null);
     },
     onError: (err: any) => {
       error(err.response?.data?.message || "Failed to delete task");
+    },
+  });
+
+  const addLogMutation = useMutation({
+    mutationFn: ({ taskId, content }: { taskId: string; content: string }) =>
+      taskService.addLog(taskId, content),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      success("Work log added successfully!");
+      setSelectedTaskDetails(res.data);
+      setLogContent("");
+    },
+    onError: (err: any) => {
+      error(err.response?.data?.message || "Failed to add work log");
+    },
+  });
+
+  const deleteLogMutation = useMutation({
+    mutationFn: ({ taskId, logId }: { taskId: string; logId: string }) =>
+      taskService.deleteLog(taskId, logId),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      success("Work log deleted successfully!");
+      setSelectedTaskDetails(res.data);
+    },
+    onError: (err: any) => {
+      error(err.response?.data?.message || "Failed to delete work log");
     },
   });
 
@@ -148,14 +199,22 @@ export default function MyTasksPage() {
   };
 
   const handleCreateTask = (data: TaskFormValues) => {
-    createTaskMutation.mutate(data);
+    const formattedData = {
+      ...data,
+      dueDate: data.dueDate ? new Date(data.dueDate).toISOString() : null,
+    };
+    createTaskMutation.mutate(formattedData);
   };
 
   const handleUpdateTask = (data: TaskFormValues) => {
     if (editingTask) {
+      const formattedData = {
+        ...data,
+        dueDate: data.dueDate ? new Date(data.dueDate).toISOString() : null,
+      };
       updateTaskMutation.mutate({
         id: editingTask._id,
-        data,
+        data: formattedData,
       });
     }
   };
@@ -164,6 +223,33 @@ export default function MyTasksPage() {
     if (deletingTaskId) {
       deleteTaskMutation.mutate(deletingTaskId);
     }
+  };
+
+  const handleAddLog = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (selectedTaskDetails && logContent.trim()) {
+      addLogMutation.mutate({
+        taskId: selectedTaskDetails._id,
+        content: logContent.trim(),
+      });
+    }
+  };
+
+  const handleDeleteLog = (logId: string) => {
+    if (selectedTaskDetails) {
+      deleteLogMutation.mutate({
+        taskId: selectedTaskDetails._id,
+        logId,
+      });
+    }
+  };
+
+  // Check if a task is overdue
+  const isTaskOverdue = (task: Task) => {
+    if (!task.dueDate || task.status === "done") return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return new Date(task.dueDate) < today;
   };
 
   // Filter & Search & Sort computation
@@ -180,16 +266,41 @@ export default function MyTasksPage() {
       );
     }
 
-    // 2. Status Filter
-    if (activeFilter !== "all") {
-      if (activeFilter === "pending") {
-        result = result.filter((t) => t.status === "todo" || t.status === "in-progress");
-      } else {
-        result = result.filter((t) => t.status === activeFilter);
+    // 2. Status Dropdown Filter
+    if (statusFilter !== "all") {
+      result = result.filter((t) => t.status === statusFilter);
+    }
+
+    // 3. Priority Dropdown Filter
+    if (priorityFilter !== "all") {
+      result = result.filter((t) => t.priority === priorityFilter);
+    }
+
+    // 4. Category Dropdown Filter
+    if (categoryFilter !== "all") {
+      result = result.filter((t) => t.category === categoryFilter);
+    }
+
+    // 5. Quick Filter Tab Selection
+    if (quickFilter !== "all") {
+      const todayStr = new Date().toISOString().split("T")[0];
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+      const todayEnd = new Date();
+      todayEnd.setHours(23, 59, 59, 999);
+
+      if (quickFilter === "completed") {
+        result = result.filter((t) => t.status === "done");
+      } else if (quickFilter === "overdue") {
+        result = result.filter((t) => isTaskOverdue(t));
+      } else if (quickFilter === "today") {
+        result = result.filter((t) => t.dueDate && t.dueDate.split("T")[0] === todayStr);
+      } else if (quickFilter === "upcoming") {
+        result = result.filter((t) => t.dueDate && new Date(t.dueDate) > todayEnd && t.status !== "done");
       }
     }
 
-    // 3. Sorting
+    // 6. Sorting
     result.sort((a, b) => {
       switch (sortBy) {
         case "oldest":
@@ -198,6 +309,24 @@ export default function MyTasksPage() {
           return a.title.localeCompare(b.title);
         case "alpha-desc":
           return b.title.localeCompare(a.title);
+        case "priority-asc": {
+          const weights = { low: 1, medium: 2, high: 3, critical: 4 };
+          return (weights[a.priority] || 2) - (weights[b.priority] || 2);
+        }
+        case "priority-desc": {
+          const weights = { low: 1, medium: 2, high: 3, critical: 4 };
+          return (weights[b.priority] || 2) - (weights[a.priority] || 2);
+        }
+        case "due-asc": {
+          if (!a.dueDate) return 1;
+          if (!b.dueDate) return -1;
+          return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+        }
+        case "due-desc": {
+          if (!a.dueDate) return 1;
+          if (!b.dueDate) return -1;
+          return new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime();
+        }
         case "newest":
         default:
           return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
@@ -205,13 +334,76 @@ export default function MyTasksPage() {
     });
 
     return result;
-  }, [tasks, searchTerm, activeFilter, sortBy]);
+  }, [tasks, searchTerm, statusFilter, priorityFilter, categoryFilter, quickFilter, sortBy]);
 
-  // Counts
+  // Counts for tabs/widgets
   const totalCount = tasks.length;
-  const todoCount = tasks.filter((t) => t.status === "todo").length;
-  const inProgressCount = tasks.filter((t) => t.status === "in-progress").length;
-  const doneCount = tasks.filter((t) => t.status === "done").length;
+  const completedCount = tasks.filter((t) => t.status === "done").length;
+  const overdueCount = tasks.filter((t) => isTaskOverdue(t)).length;
+  const dueTodayCount = tasks.filter((t) => {
+    const todayStr = new Date().toISOString().split("T")[0];
+    return t.dueDate && t.dueDate.split("T")[0] === todayStr;
+  }).length;
+  const upcomingCount = tasks.filter((t) => {
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+    return t.dueDate && new Date(t.dueDate) > todayEnd && t.status !== "done";
+  }).length;
+
+  const getPrioritySymbol = (priority: "low" | "medium" | "high" | "critical") => {
+    switch (priority) {
+      case "low":
+        return "○";
+      case "medium":
+        return "◔";
+      case "high":
+        return "◑";
+      case "critical":
+        return "●";
+      default:
+        return "◔";
+    }
+  };
+
+  const getPriorityStyle = (priority: "low" | "medium" | "high" | "critical") => {
+    switch (priority) {
+      case "low":
+        return "border-neutral-200 text-neutral-500 bg-neutral-50";
+      case "medium":
+        return "border-neutral-300 text-neutral-700 bg-neutral-100";
+      case "high":
+        return "border-neutral-400 text-neutral-900 bg-neutral-200";
+      case "critical":
+        return "border-neutral-950 text-white bg-neutral-950";
+      default:
+        return "border-neutral-300 text-neutral-700 bg-neutral-100";
+    }
+  };
+
+  const formatDueDate = (dateStr?: string) => {
+    if (!dateStr) return "";
+    return new Date(dateStr).toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+      year: "numeric"
+    });
+  };
+
+  const getRelativeTime = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffSecs = Math.floor(diffMs / 1000);
+    const diffMins = Math.floor(diffSecs / 60);
+    const diffHrs = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHrs / 24);
+
+    if (diffSecs < 60) return "Just now";
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHrs < 24) return `${diffHrs}h ago`;
+    if (diffDays === 1) return "Yesterday";
+    return `${diffDays} days ago`;
+  };
 
   return (
     <div className="space-y-6">
@@ -232,9 +424,9 @@ export default function MyTasksPage() {
         </Button>
       </div>
 
-      {/* Toolbar: Search, Filters, and Sorting Controls */}
+      {/* Toolbar: Search, Advanced Filters, and Sorting Controls */}
       <div className="bg-secondary-bg border border-border-custom rounded-lg p-4 space-y-3.5 select-none shadow-xs">
-        <div className="flex flex-col lg:flex-row gap-3">
+        <div className="flex flex-col gap-3">
           {/* Search bar */}
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-secondary-text" />
@@ -251,41 +443,92 @@ export default function MyTasksPage() {
             />
           </div>
 
-          {/* Sorters and Quick States */}
-          <div className="flex items-center gap-2.5 flex-wrap">
+          {/* Advanced Multi-Filters Dropdowns */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            {/* Status Dropdown */}
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] font-bold text-secondary-text uppercase">Status</label>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as any)}
+                className="bg-white border border-border-custom rounded-md px-2.5 py-1.5 text-xs text-foreground outline-none cursor-pointer focus:border-foreground"
+              >
+                <option value="all">All Statuses</option>
+                <option value="todo">Todo</option>
+                <option value="in-progress">In Progress</option>
+                <option value="done">Done</option>
+              </select>
+            </div>
+
+            {/* Priority Dropdown */}
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] font-bold text-secondary-text uppercase">Priority</label>
+              <select
+                value={priorityFilter}
+                onChange={(e) => setPriorityFilter(e.target.value as any)}
+                className="bg-white border border-border-custom rounded-md px-2.5 py-1.5 text-xs text-foreground outline-none cursor-pointer focus:border-foreground"
+              >
+                <option value="all">All Priorities</option>
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="critical">Critical</option>
+              </select>
+            </div>
+
+            {/* Category Dropdown */}
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] font-bold text-secondary-text uppercase">Category</label>
+              <select
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value as any)}
+                className="bg-white border border-border-custom rounded-md px-2.5 py-1.5 text-xs text-foreground outline-none cursor-pointer focus:border-foreground"
+              >
+                <option value="all">All Categories</option>
+                <option value="work">Work</option>
+                <option value="personal">Personal</option>
+                <option value="study">Study</option>
+                <option value="health">Health</option>
+              </select>
+            </div>
+
             {/* Sorting Dropdown */}
-            <div className="flex items-center gap-1.5 bg-white border border-border-custom px-2.5 py-1.5 rounded-md text-xs font-semibold text-foreground">
-              <ArrowUpDown className="w-3.5 h-3.5 text-secondary-text" />
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] font-bold text-secondary-text uppercase">Sort By</label>
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as any)}
-                className="bg-transparent outline-none cursor-pointer border-none text-xs"
+                className="bg-white border border-border-custom rounded-md px-2.5 py-1.5 text-xs text-foreground outline-none cursor-pointer focus:border-foreground"
               >
                 <option value="newest">Newest Created</option>
                 <option value="oldest">Oldest Created</option>
                 <option value="alpha-asc">Title: A to Z</option>
                 <option value="alpha-desc">Title: Z to A</option>
+                <option value="priority-desc">Priority: High to Low</option>
+                <option value="priority-asc">Priority: Low to High</option>
+                <option value="due-asc">Due Date: Earliest</option>
+                <option value="due-desc">Due Date: Latest</option>
               </select>
             </div>
           </div>
         </div>
 
-        {/* Tab Filters */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pt-1 border-t border-border-custom/50">
+        {/* Quick Filter Tabs */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pt-2 border-t border-border-custom/50">
           <div className="flex bg-neutral-100 border border-border-custom p-0.5 rounded-md text-xs font-semibold text-secondary-text w-full sm:w-auto overflow-x-auto">
             {[
-              { id: "all", label: `All (${totalCount})` },
-              { id: "todo", label: `To Do (${todoCount})` },
-              { id: "in-progress", label: `In Progress (${inProgressCount})` },
-              { id: "pending", label: `Pending (${todoCount + inProgressCount})` },
-              { id: "done", label: `Completed (${doneCount})` },
+              { id: "all", label: `All Tasks (${totalCount})` },
+              { id: "today", label: `Due Today (${dueTodayCount})` },
+              { id: "upcoming", label: `Upcoming (${upcomingCount})` },
+              { id: "overdue", label: `Overdue (${overdueCount})` },
+              { id: "completed", label: `Completed (${completedCount})` },
             ].map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveFilter(tab.id as any)}
+                onClick={() => setQuickFilter(tab.id as any)}
                 className={`
                   px-3 py-1.5 rounded transition uppercase leading-none text-[10px] tracking-tight whitespace-nowrap shrink-0
-                  ${activeFilter === tab.id 
+                  ${quickFilter === tab.id 
                     ? "bg-white border border-border-custom text-foreground shadow-xs font-bold" 
                     : "hover:text-foreground hover:bg-hover-custom"
                   }
@@ -310,91 +553,147 @@ export default function MyTasksPage() {
       ) : processedTasks.length > 0 ? (
         <div className="flex flex-col gap-3">
           <AnimatePresence mode="popLayout">
-            {processedTasks.map((task) => (
-              <motion.div
-                key={task._id}
-                layout
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.15 }}
-                className="p-4.5 bg-white border border-border-custom rounded-lg shadow-xs hover:border-foreground/45 transition flex items-center justify-between gap-4 group"
-              >
-                <div className="flex items-start gap-3.5 min-w-0">
-                  {/* Status checkbox toggle */}
-                  <button
-                    onClick={() => 
-                      handleQuickStatusChange(task, task.status === "done" ? "todo" : "done")
-                    }
-                    className="text-secondary-text hover:text-foreground shrink-0 mt-0.5 transition cursor-pointer"
-                    aria-label={task.status === "done" ? "Mark todo" : "Mark completed"}
-                  >
-                    {task.status === "done" ? (
-                      <CheckCircle2 className="w-5 h-5 text-foreground" />
-                    ) : (
-                      <Circle className="w-5 h-5" />
-                    )}
-                  </button>
-                  
-                  <div className="min-w-0">
-                    <h4 className={`text-xs font-bold tracking-tight text-foreground truncate ${task.status === "done" ? "line-through text-secondary-text" : ""}`}>
-                      {task.title}
-                    </h4>
-                    <p className={`text-xs text-secondary-text leading-normal mt-1 max-w-2xl ${task.status === "done" ? "line-through" : ""}`}>
-                      {task.description}
-                    </p>
-                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-2.5 select-none text-[10px]">
-                      <span className="text-secondary-text font-semibold uppercase bg-secondary-bg px-2 py-0.5 border border-border-custom rounded whitespace-nowrap">
-                        Created {new Date(task.createdAt).toLocaleDateString(undefined, {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric"
-                        })}
-                      </span>
-                      
-                      <span className="text-secondary-text font-semibold select-none">•</span>
+            {processedTasks.map((task) => {
+              const overdue = isTaskOverdue(task);
+              return (
+                <motion.div
+                  key={task._id}
+                  layout
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.15 }}
+                  onClick={() => setSelectedTaskDetails(task)}
+                  className="p-4.5 bg-white border border-border-custom rounded-lg shadow-xs hover:border-foreground/45 transition flex items-center justify-between gap-4 group cursor-pointer"
+                >
+                  <div className="flex items-start gap-3.5 min-w-0 flex-1">
+                    {/* Status checkbox toggle */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation(); // Avoid opening details drawer
+                        handleQuickStatusChange(task, task.status === "done" ? "todo" : "done");
+                      }}
+                      className="text-secondary-text hover:text-foreground shrink-0 mt-0.5 transition cursor-pointer"
+                      aria-label={task.status === "done" ? "Mark todo" : "Mark completed"}
+                    >
+                      {task.status === "done" ? (
+                        <CheckCircle2 className="w-5 h-5 text-foreground" />
+                      ) : (
+                        <Circle className="w-5 h-5" />
+                      )}
+                    </button>
+                    
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4 className={`text-xs font-bold tracking-tight text-foreground truncate ${task.status === "done" ? "line-through text-secondary-text" : ""}`}>
+                          {task.title}
+                        </h4>
+                        
+                        {/* Category Badge */}
+                        <span className="text-[10px] text-secondary-text font-bold uppercase tracking-tight">
+                          [{task.category || "personal"}]
+                        </span>
 
-                      {/* inline selector */}
-                      <div className="flex items-center gap-1 whitespace-nowrap shrink-0">
-                        <span className="text-secondary-text font-medium">Status:</span>
-                        <select
-                          value={task.status}
-                          onChange={(e) => 
-                            handleQuickStatusChange(task, e.target.value as any)
-                          }
-                          className="
-                            text-[10px] text-secondary-text font-bold bg-transparent outline-none cursor-pointer uppercase py-0 border-none 
-                            hover:text-foreground transition focus:ring-0 select-none
-                          "
-                        >
-                          <option value="todo">Todo</option>
-                          <option value="in-progress">In Progress</option>
-                          <option value="done">Done</option>
-                        </select>
+                        {/* Priority Badge */}
+                        <span className={`inline-flex items-center gap-1 border px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${getPriorityStyle(task.priority || "medium")}`}>
+                          <span>{getPrioritySymbol(task.priority || "medium")}</span>
+                          <span>{task.priority || "medium"}</span>
+                        </span>
+
+                        {/* Overdue Badge */}
+                        {overdue && (
+                          <span className="inline-flex items-center gap-0.5 border border-neutral-400 bg-neutral-100 text-neutral-900 px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase animate-pulse">
+                            <AlertCircle className="w-2.5 h-2.5" />
+                            <span>Overdue</span>
+                          </span>
+                        )}
+                      </div>
+
+                      <p className={`text-xs text-secondary-text leading-normal mt-1.5 max-w-2xl truncate ${task.status === "done" ? "line-through" : ""}`}>
+                        {task.description}
+                      </p>
+
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-2.5 select-none text-[10px]">
+                        <span className="text-secondary-text font-semibold uppercase bg-secondary-bg px-2 py-0.5 border border-border-custom rounded whitespace-nowrap">
+                          Created {new Date(task.createdAt).toLocaleString(undefined, {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                            hour: "numeric",
+                            minute: "2-digit"
+                          })}
+                        </span>
+                        
+                        {task.dueDate && (
+                          <>
+                            <span className="text-secondary-text font-semibold select-none">•</span>
+                            <span className={`font-semibold bg-secondary-bg px-2 py-0.5 border border-border-custom rounded whitespace-nowrap flex items-center gap-1 ${overdue ? "text-neutral-900 border-neutral-400" : "text-secondary-text"}`}>
+                              <Calendar className="w-3 h-3 text-secondary-text" />
+                              <span>Due: {formatDueDate(task.dueDate)}</span>
+                            </span>
+                          </>
+                        )}
+
+                        {task.logs && task.logs.length > 0 && (
+                          <>
+                            <span className="text-secondary-text font-semibold select-none">•</span>
+                            <span className="text-secondary-text font-semibold bg-secondary-bg px-2 py-0.5 border border-border-custom rounded whitespace-nowrap flex items-center gap-1">
+                              <MessageSquare className="w-3 h-3 text-secondary-text" />
+                              <span>{task.logs.length} Log{task.logs.length > 1 ? "s" : ""}</span>
+                            </span>
+                          </>
+                        )}
+                        
+                        <span className="text-secondary-text font-semibold select-none">•</span>
+
+                        {/* inline status selector */}
+                        <div className="flex items-center gap-1 whitespace-nowrap shrink-0" onClick={(e) => e.stopPropagation()}>
+                          <span className="text-secondary-text font-medium">Status:</span>
+                          <select
+                            value={task.status}
+                            onChange={(e) => 
+                              handleQuickStatusChange(task, e.target.value as any)
+                            }
+                            className="
+                              text-[10px] text-secondary-text font-bold bg-transparent outline-none cursor-pointer uppercase py-0 border-none 
+                              hover:text-foreground transition focus:ring-0 select-none
+                            "
+                          >
+                            <option value="todo">Todo</option>
+                            <option value="in-progress">In Progress</option>
+                            <option value="done">Done</option>
+                          </select>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Hover Actions */}
-                <div className="flex items-center gap-1.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button
-                    onClick={() => setEditingTask(task)}
-                    className="text-secondary-text hover:text-foreground p-1 hover:bg-hover-custom rounded transition cursor-pointer"
-                    aria-label="Edit task"
-                  >
-                    <Edit2 className="w-4.5 h-4.5" />
-                  </button>
-                  <button
-                    onClick={() => setDeletingTaskId(task._id)}
-                    className="text-secondary-text hover:text-foreground p-1 hover:bg-hover-custom rounded transition cursor-pointer"
-                    aria-label="Delete task"
-                  >
-                    <Trash2 className="w-4.5 h-4.5" />
-                  </button>
-                </div>
-              </motion.div>
-            ))}
+                  {/* Hover Actions */}
+                  <div className="flex items-center gap-1.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditingTask(task);
+                      }}
+                      className="text-secondary-text hover:text-foreground p-1 hover:bg-hover-custom rounded transition cursor-pointer"
+                      aria-label="Edit task"
+                    >
+                      <Edit2 className="w-4.5 h-4.5" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeletingTaskId(task._id);
+                      }}
+                      className="text-secondary-text hover:text-foreground p-1 hover:bg-hover-custom rounded transition cursor-pointer"
+                      aria-label="Delete task"
+                    >
+                      <Trash2 className="w-4.5 h-4.5" />
+                    </button>
+                  </div>
+                </motion.div>
+              );
+            })}
           </AnimatePresence>
         </div>
       ) : (
@@ -403,14 +702,180 @@ export default function MyTasksPage() {
           description={
             searchTerm.trim() !== ""
               ? `No tasks match search term "${searchTerm}". Try query edits.`
-              : activeFilter === "all"
-              ? "You haven't logged any tasks yet. Create one to get started!"
-              : `You have no tasks matching filter status "${activeFilter}".`
+              : quickFilter !== "all"
+              ? `You have no tasks matching quick filter "${quickFilter}".`
+              : "You haven't logged any tasks yet. Create one to get started!"
           }
-          actionText={activeFilter === "all" || searchTerm.trim() !== "" ? "Create Task" : undefined}
+          actionText={quickFilter === "all" || searchTerm.trim() !== "" ? "Create Task" : undefined}
           onAction={() => setCreateModalOpen(true)}
         />
       )}
+
+      {/* TASK DETAILS SLIDE-OVER DRAWER */}
+      <AnimatePresence>
+        {selectedTaskDetails && (
+          <div className="fixed inset-0 z-50 flex justify-end">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.4 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedTaskDetails(null)}
+              className="fixed inset-0 bg-black pointer-events-auto"
+            />
+            
+            {/* Slide-over Drawer panel */}
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 220 }}
+              className="relative w-full max-w-md h-full bg-white border-l border-border-custom shadow-2xl flex flex-col z-10 pointer-events-auto"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-6 py-5 border-b border-border-custom bg-white">
+                <div className="min-w-0">
+                  <h3 className="text-base font-bold text-foreground truncate">
+                    {selectedTaskDetails.title}
+                  </h3>
+                  <p className="text-[10px] text-secondary-text uppercase font-semibold mt-0.5 tracking-wide">
+                    Task Workspace
+                  </p>
+                </div>
+                <button
+                  onClick={() => setSelectedTaskDetails(null)}
+                  className="text-secondary-text hover:text-foreground transition p-1 rounded-md hover:bg-hover-custom"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Drawer Body Scrollable */}
+              <div className="flex-1 overflow-y-auto p-6 space-y-6 text-left">
+                {/* Meta details list */}
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4 border border-border-custom rounded-lg p-3 bg-secondary-bg">
+                    <div>
+                      <span className="text-[9px] font-bold text-secondary-text uppercase block">Status</span>
+                      <select
+                        value={selectedTaskDetails.status}
+                        onChange={(e) => handleQuickStatusChange(selectedTaskDetails, e.target.value as any)}
+                        className="text-xs text-foreground font-bold bg-transparent outline-none uppercase py-0.5 cursor-pointer mt-0.5 border-none"
+                      >
+                        <option value="todo">Todo</option>
+                        <option value="in-progress">In Progress</option>
+                        <option value="done">Done</option>
+                      </select>
+                    </div>
+                    <div>
+                      <span className="text-[9px] font-bold text-secondary-text uppercase block">Priority</span>
+                      <span className={`inline-flex items-center gap-1 border px-2 py-0.5 rounded text-[10px] font-bold uppercase mt-1 ${getPriorityStyle(selectedTaskDetails.priority || "medium")}`}>
+                        <span>{getPrioritySymbol(selectedTaskDetails.priority || "medium")}</span>
+                        <span>{selectedTaskDetails.priority || "medium"}</span>
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[9px] font-bold text-secondary-text uppercase block">Category</span>
+                      <span className="inline-block text-xs font-bold text-foreground mt-1.5 uppercase">
+                        [{selectedTaskDetails.category || "personal"}]
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[9px] font-bold text-secondary-text uppercase block">Due Date</span>
+                      <span className="inline-flex items-center gap-1 text-xs font-semibold mt-1.5 text-foreground">
+                        <Calendar className="w-3.5 h-3.5 text-secondary-text" />
+                        <span>{selectedTaskDetails.dueDate ? formatDueDate(selectedTaskDetails.dueDate) : "None"}</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold text-secondary-text uppercase">Description</span>
+                    <p className="text-xs text-foreground leading-relaxed bg-neutral-50 border border-border-custom p-3 rounded-md whitespace-pre-wrap">
+                      {selectedTaskDetails.description}
+                    </p>
+                  </div>
+                </div>
+
+                <hr className="border-border-custom" />
+
+                {/* Work Log section */}
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="text-xs font-bold text-foreground tracking-tight uppercase flex items-center gap-1.5">
+                      <MessageSquare className="w-4 h-4 text-secondary-text" />
+                      <span>Work Logs & Notes</span>
+                    </h4>
+                    <p className="text-[10px] text-secondary-text">Keep progress updates and work notes inside this task</p>
+                  </div>
+
+                  {/* Add log form */}
+                  <form onSubmit={handleAddLog} className="space-y-2">
+                    <textarea
+                      rows={2}
+                      placeholder="Write progress update or log note..."
+                      value={logContent}
+                      onChange={(e) => setLogContent(e.target.value)}
+                      disabled={addLogMutation.isPending}
+                      className="w-full text-xs p-2.5 bg-white border border-border-custom rounded-md placeholder-secondary-text text-foreground outline-none transition focus:border-foreground focus:ring-1 focus:ring-foreground"
+                    />
+                    <div className="flex justify-end">
+                      <Button
+                        type="submit"
+                        variant="primary"
+                        size="sm"
+                        isLoading={addLogMutation.isPending}
+                        disabled={!logContent.trim() || addLogMutation.isPending}
+                      >
+                        Add Update
+                      </Button>
+                    </div>
+                  </form>
+
+                  {/* Work logs list */}
+                  <div className="space-y-2">
+                    {selectedTaskDetails.logs && selectedTaskDetails.logs.length > 0 ? (
+                      <div className="flex flex-col gap-2 pt-1">
+                        {[...selectedTaskDetails.logs].reverse().map((log) => (
+                          <div key={log._id} className="p-3 bg-secondary-bg border border-border-custom rounded-md relative group/log flex justify-between items-start gap-4">
+                            <div className="space-y-1 flex-1">
+                              <p className="text-xs text-foreground leading-normal whitespace-pre-wrap select-text font-medium">
+                                {log.content}
+                              </p>
+                              <span className="text-[10px] text-secondary-text font-semibold block leading-none pt-0.5">
+                                {getRelativeTime(log.createdAt)} • {new Date(log.createdAt).toLocaleString(undefined, {
+                                  month: "short",
+                                  day: "numeric",
+                                  year: "numeric",
+                                  hour: "numeric",
+                                  minute: "2-digit"
+                                })}
+                              </span>
+                            </div>
+
+                            <button
+                              onClick={() => handleDeleteLog(log._id)}
+                              disabled={deleteLogMutation.isPending}
+                              className="text-secondary-text hover:text-foreground p-0.5 hover:bg-hover-custom rounded transition shrink-0 opacity-0 group-hover/log:opacity-100 disabled:opacity-50 cursor-pointer"
+                              aria-label="Delete log entry"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-6 border border-dashed border-border-custom rounded-md text-xs text-secondary-text select-none">
+                        No progress updates logged.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* CREATE TASK MODAL */}
       <Modal
@@ -452,23 +917,83 @@ export default function MyTasksPage() {
             )}
           </div>
 
-          <div className="flex flex-col gap-1.5 select-none">
-            <label className="text-xs font-semibold text-foreground tracking-tight">
-              Initial Status
-            </label>
-            <select
-              disabled={createTaskMutation.isPending}
-              className="
-                w-full px-3 py-2 text-sm bg-white border border-border-custom rounded-md 
-                text-foreground outline-none cursor-pointer transition uppercase font-semibold
-                focus:border-foreground focus:ring-1 focus:ring-foreground
-              "
-              {...registerCreate("status")}
-            >
-              <option value="todo">Todo</option>
-              <option value="in-progress">In Progress</option>
-              <option value="done">Done</option>
-            </select>
+          <div className="grid grid-cols-2 gap-3.5">
+            <div className="flex flex-col gap-1.5 select-none">
+              <label className="text-xs font-semibold text-foreground tracking-tight">
+                Category
+              </label>
+              <select
+                disabled={createTaskMutation.isPending}
+                className="
+                  w-full px-3 py-2 text-sm bg-white border border-border-custom rounded-md 
+                  text-foreground outline-none cursor-pointer transition uppercase font-semibold
+                  focus:border-foreground focus:ring-1 focus:ring-foreground
+                "
+                {...registerCreate("category")}
+              >
+                <option value="personal">Personal</option>
+                <option value="work">Work</option>
+                <option value="study">Study</option>
+                <option value="health">Health</option>
+              </select>
+            </div>
+
+            <div className="flex flex-col gap-1.5 select-none">
+              <label className="text-xs font-semibold text-foreground tracking-tight">
+                Priority
+              </label>
+              <select
+                disabled={createTaskMutation.isPending}
+                className="
+                  w-full px-3 py-2 text-sm bg-white border border-border-custom rounded-md 
+                  text-foreground outline-none cursor-pointer transition uppercase font-semibold
+                  focus:border-foreground focus:ring-1 focus:ring-foreground
+                "
+                {...registerCreate("priority")}
+              >
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="critical">Critical</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3.5">
+            <div className="flex flex-col gap-1.5 select-none">
+              <label className="text-xs font-semibold text-foreground tracking-tight">
+                Due Date
+              </label>
+              <input
+                type="date"
+                disabled={createTaskMutation.isPending}
+                className="
+                  w-full px-3 py-2 text-sm bg-white border border-border-custom rounded-md 
+                  text-foreground outline-none cursor-pointer transition
+                  focus:border-foreground focus:ring-1 focus:ring-foreground
+                "
+                {...registerCreate("dueDate")}
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5 select-none">
+              <label className="text-xs font-semibold text-foreground tracking-tight">
+                Initial Status
+              </label>
+              <select
+                disabled={createTaskMutation.isPending}
+                className="
+                  w-full px-3 py-2 text-sm bg-white border border-border-custom rounded-md 
+                  text-foreground outline-none cursor-pointer transition uppercase font-semibold
+                  focus:border-foreground focus:ring-1 focus:ring-foreground
+                "
+                {...registerCreate("status")}
+              >
+                <option value="todo">Todo</option>
+                <option value="in-progress">In Progress</option>
+                <option value="done">Done</option>
+              </select>
+            </div>
           </div>
 
           <div className="flex justify-end gap-2 pt-2 select-none">
@@ -533,23 +1058,83 @@ export default function MyTasksPage() {
             )}
           </div>
 
-          <div className="flex flex-col gap-1.5 select-none">
-            <label className="text-xs font-semibold text-foreground tracking-tight">
-              Status
-            </label>
-            <select
-              disabled={updateTaskMutation.isPending}
-              className="
-                w-full px-3 py-2 text-sm bg-white border border-border-custom rounded-md 
-                text-foreground outline-none cursor-pointer transition uppercase font-semibold
-                focus:border-foreground focus:ring-1 focus:ring-foreground
-              "
-              {...registerEdit("status")}
-            >
-              <option value="todo">Todo</option>
-              <option value="in-progress">In Progress</option>
-              <option value="done">Done</option>
-            </select>
+          <div className="grid grid-cols-2 gap-3.5">
+            <div className="flex flex-col gap-1.5 select-none">
+              <label className="text-xs font-semibold text-foreground tracking-tight">
+                Category
+              </label>
+              <select
+                disabled={updateTaskMutation.isPending}
+                className="
+                  w-full px-3 py-2 text-sm bg-white border border-border-custom rounded-md 
+                  text-foreground outline-none cursor-pointer transition uppercase font-semibold
+                  focus:border-foreground focus:ring-1 focus:ring-foreground
+                "
+                {...registerEdit("category")}
+              >
+                <option value="personal">Personal</option>
+                <option value="work">Work</option>
+                <option value="study">Study</option>
+                <option value="health">Health</option>
+              </select>
+            </div>
+
+            <div className="flex flex-col gap-1.5 select-none">
+              <label className="text-xs font-semibold text-foreground tracking-tight">
+                Priority
+              </label>
+              <select
+                disabled={updateTaskMutation.isPending}
+                className="
+                  w-full px-3 py-2 text-sm bg-white border border-border-custom rounded-md 
+                  text-foreground outline-none cursor-pointer transition uppercase font-semibold
+                  focus:border-foreground focus:ring-1 focus:ring-foreground
+                "
+                {...registerEdit("priority")}
+              >
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="critical">Critical</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3.5">
+            <div className="flex flex-col gap-1.5 select-none">
+              <label className="text-xs font-semibold text-foreground tracking-tight">
+                Due Date
+              </label>
+              <input
+                type="date"
+                disabled={updateTaskMutation.isPending}
+                className="
+                  w-full px-3 py-2 text-sm bg-white border border-border-custom rounded-md 
+                  text-foreground outline-none cursor-pointer transition
+                  focus:border-foreground focus:ring-1 focus:ring-foreground
+                "
+                {...registerEdit("dueDate")}
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5 select-none">
+              <label className="text-xs font-semibold text-foreground tracking-tight">
+                Status
+              </label>
+              <select
+                disabled={updateTaskMutation.isPending}
+                className="
+                  w-full px-3 py-2 text-sm bg-white border border-border-custom rounded-md 
+                  text-foreground outline-none cursor-pointer transition uppercase font-semibold
+                  focus:border-foreground focus:ring-1 focus:ring-foreground
+                "
+                {...registerEdit("status")}
+              >
+                <option value="todo">Todo</option>
+                <option value="in-progress">In Progress</option>
+                <option value="done">Done</option>
+              </select>
+            </div>
           </div>
 
           <div className="flex justify-end gap-2 pt-2 select-none">

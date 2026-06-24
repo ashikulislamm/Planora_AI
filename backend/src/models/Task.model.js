@@ -18,6 +18,33 @@ const taskSchema = new mongoose.Schema(
       enum: TASK_STATUS_LIST,
       default: TASK_STATUS.TODO,
     },
+    priority: {
+      type: String,
+      enum: ['low', 'medium', 'high', 'critical'],
+      default: 'medium',
+    },
+    dueDate: {
+      type: Date,
+    },
+    category: {
+      type: String,
+      enum: ['work', 'personal', 'study', 'health'],
+      default: 'personal',
+    },
+    logs: [
+      {
+        content: {
+          type: String,
+          required: [true, 'Log content is required'],
+          trim: true,
+          maxlength: [500, 'Log content must be at most 500 characters'],
+        },
+        createdAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
@@ -29,6 +56,12 @@ const taskSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+// Indexes for query performance
+taskSchema.index({ userId: 1, status: 1 });
+taskSchema.index({ userId: 1, priority: 1 });
+taskSchema.index({ userId: 1, category: 1 });
+taskSchema.index({ userId: 1, dueDate: 1 });
 
 const Task = mongoose.model('Task', taskSchema);
 

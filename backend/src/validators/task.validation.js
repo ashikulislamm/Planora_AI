@@ -17,6 +17,23 @@ export const createTaskSchema = z.object({
         invalid_type_error: `Status must be one of: ${TASK_STATUS_LIST.join(', ')}`,
       })
       .optional(),
+    priority: z
+      .enum(['low', 'medium', 'high', 'critical'], {
+        invalid_type_error: 'Priority must be one of: low, medium, high, critical',
+      })
+      .optional(),
+    category: z
+      .enum(['work', 'personal', 'study', 'health'], {
+        invalid_type_error: 'Category must be one of: work, personal, study, health',
+      })
+      .optional(),
+    dueDate: z
+      .string()
+      .refine((val) => !isNaN(Date.parse(val)), {
+        message: 'Invalid due date format',
+      })
+      .optional()
+      .nullable(),
   }),
 });
 
@@ -38,6 +55,44 @@ export const updateTaskSchema = z.object({
         invalid_type_error: `Status must be one of: ${TASK_STATUS_LIST.join(', ')}`,
       })
       .optional(),
+    priority: z
+      .enum(['low', 'medium', 'high', 'critical'], {
+        invalid_type_error: 'Priority must be one of: low, medium, high, critical',
+      })
+      .optional(),
+    category: z
+      .enum(['work', 'personal', 'study', 'health'], {
+        invalid_type_error: 'Category must be one of: work, personal, study, health',
+      })
+      .optional(),
+    dueDate: z
+      .string()
+      .refine((val) => !isNaN(Date.parse(val)), {
+        message: 'Invalid due date format',
+      })
+      .optional()
+      .nullable(),
+  }),
+});
+
+export const createLogSchema = z.object({
+  body: z.object({
+    content: z
+      .string({ required_error: 'Log content is required' })
+      .trim()
+      .min(1, 'Log content cannot be empty')
+      .max(500, 'Log content must be at most 500 characters'),
+  }),
+});
+
+export const deleteLogSchema = z.object({
+  params: z.object({
+    taskId: z
+      .string()
+      .regex(/^[0-9a-fA-F]{24}$/, 'Invalid task ID format. Must be a 24-character hex string.'),
+    logId: z
+      .string()
+      .regex(/^[0-9a-fA-F]{24}$/, 'Invalid log ID format. Must be a 24-character hex string.'),
   }),
 });
 

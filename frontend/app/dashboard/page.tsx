@@ -15,7 +15,10 @@ import {
   Clock, 
   CheckSquare, 
   ChevronRight,
-  TrendingUp
+  TrendingUp,
+  Calendar,
+  AlertCircle,
+  Folder
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
@@ -40,6 +43,9 @@ const taskSchema = z.object({
     .min(1, "Description is required")
     .max(500, "Description is too long"),
   status: z.enum(["todo", "in-progress", "done"]),
+  priority: z.enum(["low", "medium", "high", "critical"]),
+  dueDate: z.string().optional().nullable().or(z.literal("")),
+  category: z.enum(["work", "personal", "study", "health"]),
 });
 
 type TaskFormValues = z.infer<typeof taskSchema>;
@@ -53,6 +59,7 @@ export default function DashboardPage() {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
   const [greeting, setGreeting] = useState("Welcome back");
+  const [dashboardCategoryFilter, setDashboardCategoryFilter] = useState<"all" | "work" | "personal" | "study" | "health">("all");
 
   // Determine welcome greeting based on local time
   useEffect(() => {
@@ -74,6 +81,9 @@ export default function DashboardPage() {
       title: "",
       description: "",
       status: "todo",
+      priority: "medium",
+      category: "personal",
+      dueDate: "",
     },
   });
 
@@ -92,6 +102,9 @@ export default function DashboardPage() {
       setEditValue("title", editingTask.title);
       setEditValue("description", editingTask.description);
       setEditValue("status", editingTask.status);
+      setEditValue("priority", editingTask.priority || "medium");
+      setEditValue("category", editingTask.category || "personal");
+      setEditValue("dueDate", editingTask.dueDate ? editingTask.dueDate.split("T")[0] : "");
     }
   }, [editingTask, setEditValue]);
 
@@ -154,14 +167,22 @@ export default function DashboardPage() {
   };
 
   const handleCreateTask = (data: TaskFormValues) => {
-    createTaskMutation.mutate(data);
+    const formattedData = {
+      ...data,
+      dueDate: data.dueDate ? new Date(data.dueDate).toISOString() : null,
+    };
+    createTaskMutation.mutate(formattedData);
   };
 
   const handleUpdateTask = (data: TaskFormValues) => {
     if (editingTask) {
+      const formattedData = {
+        ...data,
+        dueDate: data.dueDate ? new Date(data.dueDate).toISOString() : null,
+      };
       updateTaskMutation.mutate({
         id: editingTask._id,
-        data,
+        data: formattedData,
       });
     }
   };
@@ -172,19 +193,58 @@ export default function DashboardPage() {
     }
   };
 
+  // Overdue Check
+  const isTaskOverdue = (task: Task) => {
+    if (!task.dueDate || task.status === "done") return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return new Date(task.dueDate) < today;
+  };
+
   // Stat computations
   const totalCount = tasks.length;
+  const completedCount = tasks.filter((t) => t.status === "done").length;
   const todoCount = tasks.filter((t) => t.status === "todo").length;
   const inProgressCount = tasks.filter((t) => t.status === "in-progress").length;
-  const doneCount = tasks.filter((t) => t.status === "done").length;
   
-  const completionRate = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
+  // Overdue logic
+  const overdueCount = tasks.filter((t) => isTaskOverdue(t)).length;
+
+  // Due Today logic
+  const dueTodayCount = tasks.filter((t) => {
+    const todayStr = new Date().toISOString().split("T")[0];
+    return t.dueDate && t.dueDate.split("T")[0] === todayStr;
+  }).length;
+
+  // Upcoming logic
+  const upcomingCount = tasks.filter((t) => {
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+    return t.dueDate && new Date(t.dueDate) > todayEnd && t.status !== "done";
+  }).length;
+
+  // Category counts
+  const categoryStats = {
+    work: tasks.filter((t) => t.category === "work").length,
+    personal: tasks.filter((t) => t.category === "personal").length,
+    study: tasks.filter((t) => t.category === "study").length,
+    health: tasks.filter((t) => t.category === "health").length,
+  };
+
+  const completionRate = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
   // Filter tasks to show only pending ones (todo or in-progress) on dashboard summary
-  // Sorted by updatedAt descending and capped at top 5
+  // Also filter by selected category
   const dashboardPendingTasks = tasks
     .filter((t) => t.status === "todo" || t.status === "in-progress")
+    .filter((t) => dashboardCategoryFilter === "all" || t.category === dashboardCategoryFilter)
     .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+    .slice(0, 5);
+
+  // Next 5 upcoming deadlines, sorted by nearest due date ascending (excluding completed tasks and tasks without a due date)
+  const upcomingDeadlines = tasks
+    .filter((t) => t.dueDate && t.status !== "done")
+    .sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime())
     .slice(0, 5);
 
   // Recent Activity logic
@@ -197,7 +257,7 @@ export default function DashboardPage() {
 
     return sorted.slice(0, 4).map((task) => {
       const isNew = task.createdAt === task.updatedAt;
-      const dateStr = new Date(task.updatedAt).toLocaleDateString(undefined, {
+      const dateStr = new Date(task.updatedAt).toLocaleString(undefined, {
         month: "short",
         day: "numeric",
         hour: "2-digit",
@@ -241,27 +301,28 @@ export default function DashboardPage() {
       </div>
 
       {/* Grid of Stat Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 select-none">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 select-none">
         {[
           { label: "Total Tasks", val: totalCount, icon: CheckSquare, desc: "Aggregate tasks logged" },
-          { label: "To Do", val: todoCount, icon: Circle, desc: "Awaiting execution" },
-          { label: "In Progress", val: inProgressCount, icon: Clock, desc: "Tasks actively running" },
-          { label: "Completed", val: doneCount, icon: CheckCircle2, desc: "Successfully completed" },
+          { label: "Due Today", val: dueTodayCount, icon: Calendar, desc: "Deadlines finishing today" },
+          { label: "Upcoming", val: upcomingCount, icon: Clock, desc: "Future active deadlines" },
+          { label: "Overdue", val: overdueCount, icon: AlertCircle, desc: "Overdue tasks pending", warn: overdueCount > 0 },
+          { label: "Completed", val: completedCount, icon: CheckCircle2, desc: "Successfully completed" },
         ].map((card, idx) => {
           const Icon = card.icon;
           return (
-            <div key={idx} className="p-5 bg-white border border-border-custom rounded-lg shadow-sm flex flex-col justify-between min-h-[110px]">
+            <div key={idx} className="p-4 bg-white border border-border-custom rounded-lg shadow-sm flex flex-col justify-between min-h-[105px]">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-secondary-text uppercase tracking-wider">
+                <span className="text-[10px] font-bold text-secondary-text uppercase tracking-wider">
                   {card.label}
                 </span>
-                <Icon className="w-4 h-4 text-secondary-text shrink-0" />
+                <Icon className={`w-4 h-4 shrink-0 ${card.warn ? "text-neutral-900 font-bold" : "text-secondary-text"}`} />
               </div>
-              <div className="mt-2">
+              <div className="mt-2 text-left">
                 <span className="text-2xl font-bold tracking-tight text-foreground">
                   {card.val}
                 </span>
-                <p className="text-xs text-secondary-text mt-1 leading-none">
+                <p className="text-[10px] text-secondary-text mt-1.5 leading-none">
                   {card.desc}
                 </p>
               </div>
@@ -275,7 +336,7 @@ export default function DashboardPage() {
         
         {/* Left Side: Pending Tasks Overview */}
         <div className="lg:col-span-2 space-y-4">
-          <div className="flex items-center justify-between border-b border-border-custom pb-2 select-none">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-border-custom pb-2 gap-2 select-none">
             <div className="flex items-center gap-2">
               <Clock className="w-4 h-4 text-secondary-text" />
               <h3 className="text-sm font-semibold text-foreground tracking-tight">
@@ -283,85 +344,119 @@ export default function DashboardPage() {
               </h3>
             </div>
             
-            <Link href="/dashboard/tasks">
-              <span className="text-xs font-bold text-secondary-text hover:text-foreground transition flex items-center gap-1 cursor-pointer">
-                <span>View Workspace</span>
-                <ChevronRight className="w-3.5 h-3.5" />
-              </span>
-            </Link>
+            {/* Category Filter Pills */}
+            <div className="flex items-center gap-1 overflow-x-auto max-w-full pb-1 sm:pb-0">
+              {[
+                { id: "all", label: "All" },
+                { id: "work", label: "Work" },
+                { id: "personal", label: "Personal" },
+                { id: "study", label: "Study" },
+                { id: "health", label: "Health" }
+              ].map((pill) => (
+                <button
+                  key={pill.id}
+                  onClick={() => setDashboardCategoryFilter(pill.id as any)}
+                  className={`
+                    px-2.5 py-0.5 rounded-full text-[9px] uppercase tracking-tight font-bold border transition
+                    ${dashboardCategoryFilter === pill.id 
+                      ? "bg-foreground text-white border-foreground" 
+                      : "bg-secondary-bg text-secondary-text border-border-custom hover:text-foreground"
+                    }
+                  `}
+                >
+                  {pill.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Task list summary */}
           <div className="flex flex-col gap-3">
             <AnimatePresence mode="popLayout">
               {dashboardPendingTasks.length > 0 ? (
-                dashboardPendingTasks.map((task) => (
-                  <motion.div
-                    key={task._id}
-                    layout
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ duration: 0.2 }}
-                    className="p-4 bg-white border border-border-custom rounded-lg shadow-xs hover:border-foreground/45 transition flex items-center justify-between gap-4 group"
-                  >
-                    <div className="flex items-start gap-3 min-w-0">
-                      {/* Checkbox for quick completion */}
-                      <button
-                        onClick={() => 
-                          handleQuickStatusChange(task, "done")
-                        }
-                        className="text-secondary-text hover:text-foreground shrink-0 mt-0.5 transition cursor-pointer"
-                        aria-label="Mark completed"
-                      >
-                        <Circle className="w-4.5 h-4.5" />
-                      </button>
-                      
-                      <div className="min-w-0">
-                        <h4 className="text-xs font-semibold tracking-tight text-foreground truncate">
-                          {task.title}
-                        </h4>
-                        <p className="text-xs text-secondary-text leading-normal mt-1 line-clamp-1">
-                          {task.description}
-                        </p>
-                        <div className="flex items-center gap-2 mt-2 select-none">
-                          <span className="text-[10px] text-secondary-text font-bold uppercase border border-border-custom bg-secondary-bg px-1.5 py-0.5 rounded leading-none shrink-0">
-                            {task.status}
-                          </span>
-                          <span className="text-xs text-secondary-text font-medium">
-                            Updated {new Date(task.updatedAt).toLocaleDateString(undefined, {
-                              month: "short",
-                              day: "numeric",
-                            })}
-                          </span>
+                dashboardPendingTasks.map((task) => {
+                  const overdue = isTaskOverdue(task);
+                  return (
+                    <motion.div
+                      key={task._id}
+                      layout
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      transition={{ duration: 0.2 }}
+                      className="p-4 bg-white border border-border-custom rounded-lg shadow-xs hover:border-foreground/45 transition flex items-center justify-between gap-4 group"
+                    >
+                      <div className="flex items-start gap-3 min-w-0 text-left">
+                        {/* Checkbox for quick completion */}
+                        <button
+                          onClick={() => 
+                            handleQuickStatusChange(task, "done")
+                          }
+                          className="text-secondary-text hover:text-foreground shrink-0 mt-0.5 transition cursor-pointer"
+                          aria-label="Mark completed"
+                        >
+                          <Circle className="w-4.5 h-4.5" />
+                        </button>
+                        
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <h4 className="text-xs font-bold tracking-tight text-foreground truncate">
+                              {task.title}
+                            </h4>
+                            <span className="text-[9px] text-secondary-text font-bold uppercase">
+                              [{task.category}]
+                            </span>
+                            {overdue && (
+                              <span className="inline-flex items-center gap-0.5 border border-neutral-400 bg-neutral-100 text-neutral-900 px-1 py-0.5 rounded text-[8px] font-extrabold uppercase animate-pulse">
+                                <span>Overdue</span>
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-secondary-text leading-normal mt-1 line-clamp-1">
+                            {task.description}
+                          </p>
+                          <div className="flex items-center gap-2 mt-2.5 select-none text-[10px]">
+                            <span className="text-[9px] text-secondary-text font-bold uppercase border border-border-custom bg-secondary-bg px-1.5 py-0.5 rounded leading-none shrink-0">
+                              {task.status}
+                            </span>
+                            {task.dueDate && (
+                              <span className={`text-[10px] font-semibold leading-none shrink-0 ${overdue ? "text-neutral-900 font-bold" : "text-secondary-text"}`}>
+                                Due: {new Date(task.dueDate).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Actions panel */}
-                    <div className="flex items-center gap-1.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
-                        onClick={() => setEditingTask(task)}
-                        className="text-secondary-text hover:text-foreground p-1 hover:bg-hover-custom rounded transition cursor-pointer"
-                        aria-label="Edit task"
-                      >
-                        <Edit2 className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        onClick={() => setDeletingTaskId(task._id)}
-                        className="text-secondary-text hover:text-foreground p-1 hover:bg-hover-custom rounded transition cursor-pointer"
-                        aria-label="Delete task"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </motion.div>
-                ))
+                      {/* Actions panel */}
+                      <div className="flex items-center gap-1.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={() => setEditingTask(task)}
+                          className="text-secondary-text hover:text-foreground p-1 hover:bg-hover-custom rounded transition cursor-pointer"
+                          aria-label="Edit task"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => setDeletingTaskId(task._id)}
+                          className="text-secondary-text hover:text-foreground p-1 hover:bg-hover-custom rounded transition cursor-pointer"
+                          aria-label="Delete task"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </motion.div>
+                  );
+                })
               ) : (
                 <EmptyState
-                  title="All caught up!"
-                  description="You have no pending tasks. Enjoy your day or create a new one!"
-                  actionText="Create Task"
+                  title="No pending tasks"
+                  description={
+                    dashboardCategoryFilter !== "all"
+                      ? `No tasks found under category "${dashboardCategoryFilter}".`
+                      : "You have no pending tasks. Enjoy your day or create a new one!"
+                  }
+                  actionText={dashboardCategoryFilter === "all" ? "Create Task" : undefined}
                   onAction={() => setCreateModalOpen(true)}
                 />
               )}
@@ -384,10 +479,10 @@ export default function DashboardPage() {
         <div className="space-y-6 select-none">
           
           {/* Widget 1: Completion rate progress */}
-          <div className="p-5 border border-border-custom rounded-lg bg-white shadow-sm space-y-4">
+          <div className="p-5 border border-border-custom rounded-lg bg-white shadow-sm space-y-4 text-left">
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-bold text-foreground tracking-tight uppercase">
-                Productivity
+                Productivity Brief
               </h3>
               <TrendingUp className="w-4 h-4 text-secondary-text shrink-0" />
             </div>
@@ -405,14 +500,120 @@ export default function DashboardPage() {
                   className="h-full bg-foreground rounded-full"
                 />
               </div>
-              <p className="text-xs text-secondary-text leading-normal pt-1.5">
-                Completed {doneCount} of {totalCount} total logged tasks. Keep it up!
+              <p className="text-[10px] text-secondary-text leading-normal pt-1">
+                Completed {completedCount} of {totalCount} total logged tasks. Keep it up!
               </p>
             </div>
           </div>
 
-          {/* Widget 2: Recent Activity logs */}
-          <div className="p-5 border border-border-custom rounded-lg bg-white shadow-sm space-y-4">
+          {/* Widget 2: Task Distribution Breakdown & Priority Breakdown */}
+          <div className="p-5 border border-border-custom rounded-lg bg-white shadow-sm space-y-4 text-left">
+            <h3 className="text-xs font-bold text-foreground tracking-tight uppercase border-b border-border-custom pb-2">
+              Status & Priority Metrics
+            </h3>
+            
+            <div className="grid grid-cols-2 gap-4 text-xs">
+              {/* Status Breakdown */}
+              <div className="space-y-2">
+                <span className="text-[9px] font-bold text-secondary-text uppercase block">Status</span>
+                <div className="space-y-1.5">
+                  <div className="flex justify-between">
+                    <span className="text-secondary-text">Todo:</span>
+                    <span className="font-bold text-foreground">{todoCount}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-secondary-text">Running:</span>
+                    <span className="font-bold text-foreground">{inProgressCount}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-secondary-text">Done:</span>
+                    <span className="font-bold text-foreground">{completedCount}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Priority Breakdown */}
+              <div className="space-y-2">
+                <span className="text-[9px] font-bold text-secondary-text uppercase block">Priority</span>
+                <div className="space-y-1.5">
+                  <div className="flex justify-between">
+                    <span className="text-secondary-text">Critical:</span>
+                    <span className="font-bold text-foreground">{tasks.filter(t => t.priority === "critical").length}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-secondary-text">High:</span>
+                    <span className="font-bold text-foreground">{tasks.filter(t => t.priority === "high").length}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-secondary-text">Medium:</span>
+                    <span className="font-bold text-foreground">{tasks.filter(t => t.priority === "medium" || !t.priority).length}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-secondary-text">Low:</span>
+                    <span className="font-bold text-foreground">{tasks.filter(t => t.priority === "low").length}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Widget 3: Category Statistics */}
+          <div className="p-5 border border-border-custom rounded-lg bg-white shadow-sm space-y-3.5 text-left">
+            <h3 className="text-xs font-bold text-foreground tracking-tight uppercase border-b border-border-custom pb-2 flex items-center gap-1.5">
+              <Folder className="w-4 h-4 text-secondary-text" />
+              <span>Category Workspace Statistics</span>
+            </h3>
+            <div className="space-y-2 text-xs">
+              {[
+                { name: "Work Tasks", count: categoryStats.work },
+                { name: "Personal Tasks", count: categoryStats.personal },
+                { name: "Study Tasks", count: categoryStats.study },
+                { name: "Health Tasks", count: categoryStats.health }
+              ].map((cat, idx) => (
+                <div key={idx} className="flex justify-between items-center py-0.5">
+                  <span className="text-secondary-text font-medium">{cat.name}:</span>
+                  <span className="font-bold text-foreground px-2 py-0.5 border border-border-custom bg-secondary-bg rounded text-[10px]">{cat.count}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Widget 4: Upcoming Deadlines */}
+          <div className="p-5 border border-border-custom rounded-lg bg-white shadow-sm space-y-4 text-left">
+            <h3 className="text-xs font-bold text-foreground tracking-tight uppercase border-b border-border-custom pb-2 flex items-center gap-1.5">
+              <Calendar className="w-4 h-4 text-secondary-text" />
+              <span>Upcoming Deadlines</span>
+            </h3>
+
+            {upcomingDeadlines.length > 0 ? (
+              <div className="flex flex-col gap-2">
+                {upcomingDeadlines.map((task) => {
+                  const overdue = isTaskOverdue(task);
+                  return (
+                    <div key={task._id} className="p-2.5 border border-border-custom rounded-md bg-secondary-bg space-y-1.5 text-left">
+                      <div className="flex justify-between items-start gap-2">
+                        <span className="text-xs font-semibold text-foreground truncate">{task.title}</span>
+                        <span className={`text-[9px] uppercase font-bold shrink-0 px-1.5 py-0.5 border rounded ${overdue ? "border-neutral-400 bg-neutral-200 text-neutral-900" : "border-border-custom bg-white text-secondary-text"}`}>
+                          {overdue ? "Overdue" : "Pending"}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-[10px] text-secondary-text">
+                        <span>{task.category}</span>
+                        <span className="font-semibold">{new Date(task.dueDate!).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-xs text-secondary-text text-center py-2">
+                No upcoming deadlines.
+              </p>
+            )}
+          </div>
+
+          {/* Widget 5: Recent Activity logs */}
+          <div className="p-5 border border-border-custom rounded-lg bg-white shadow-sm space-y-4 text-left">
             <h3 className="text-xs font-bold text-foreground tracking-tight uppercase border-b border-border-custom pb-2">
               Recent Activity
             </h3>
@@ -427,7 +628,7 @@ export default function DashboardPage() {
                     <span className="text-foreground font-semibold line-clamp-2">
                       {act.description}
                     </span>
-                    <span className="text-xs text-secondary-text font-medium block mt-1 leading-none">
+                    <span className="text-[10px] text-secondary-text font-medium block mt-1 leading-none">
                       {act.date}
                     </span>
                   </div>
@@ -482,23 +683,83 @@ export default function DashboardPage() {
             )}
           </div>
 
-          <div className="flex flex-col gap-1.5 select-none">
-            <label className="text-xs font-semibold text-foreground tracking-tight">
-              Initial Status
-            </label>
-            <select
-              disabled={createTaskMutation.isPending}
-              className="
-                w-full px-3 py-2 text-sm bg-white border border-border-custom rounded-md 
-                text-foreground outline-none cursor-pointer transition uppercase font-semibold
-                focus:border-foreground focus:ring-1 focus:ring-foreground
-              "
-              {...registerCreate("status")}
-            >
-              <option value="todo">Todo</option>
-              <option value="in-progress">In Progress</option>
-              <option value="done">Done</option>
-            </select>
+          <div className="grid grid-cols-2 gap-3.5">
+            <div className="flex flex-col gap-1.5 select-none">
+              <label className="text-xs font-semibold text-foreground tracking-tight">
+                Category
+              </label>
+              <select
+                disabled={createTaskMutation.isPending}
+                className="
+                  w-full px-3 py-2 text-sm bg-white border border-border-custom rounded-md 
+                  text-foreground outline-none cursor-pointer transition uppercase font-semibold
+                  focus:border-foreground focus:ring-1 focus:ring-foreground
+                "
+                {...registerCreate("category")}
+              >
+                <option value="personal">Personal</option>
+                <option value="work">Work</option>
+                <option value="study">Study</option>
+                <option value="health">Health</option>
+              </select>
+            </div>
+
+            <div className="flex flex-col gap-1.5 select-none">
+              <label className="text-xs font-semibold text-foreground tracking-tight">
+                Priority
+              </label>
+              <select
+                disabled={createTaskMutation.isPending}
+                className="
+                  w-full px-3 py-2 text-sm bg-white border border-border-custom rounded-md 
+                  text-foreground outline-none cursor-pointer transition uppercase font-semibold
+                  focus:border-foreground focus:ring-1 focus:ring-foreground
+                "
+                {...registerCreate("priority")}
+              >
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="critical">Critical</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3.5">
+            <div className="flex flex-col gap-1.5 select-none">
+              <label className="text-xs font-semibold text-foreground tracking-tight">
+                Due Date
+              </label>
+              <input
+                type="date"
+                disabled={createTaskMutation.isPending}
+                className="
+                  w-full px-3 py-2 text-sm bg-white border border-border-custom rounded-md 
+                  text-foreground outline-none cursor-pointer transition
+                  focus:border-foreground focus:ring-1 focus:ring-foreground
+                "
+                {...registerCreate("dueDate")}
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5 select-none">
+              <label className="text-xs font-semibold text-foreground tracking-tight">
+                Initial Status
+              </label>
+              <select
+                disabled={createTaskMutation.isPending}
+                className="
+                  w-full px-3 py-2 text-sm bg-white border border-border-custom rounded-md 
+                  text-foreground outline-none cursor-pointer transition uppercase font-semibold
+                  focus:border-foreground focus:ring-1 focus:ring-foreground
+                "
+                {...registerCreate("status")}
+              >
+                <option value="todo">Todo</option>
+                <option value="in-progress">In Progress</option>
+                <option value="done">Done</option>
+              </select>
+            </div>
           </div>
 
           <div className="flex justify-end gap-2 pt-2 select-none">
@@ -563,23 +824,83 @@ export default function DashboardPage() {
             )}
           </div>
 
-          <div className="flex flex-col gap-1.5 select-none">
-            <label className="text-xs font-semibold text-foreground tracking-tight">
-              Status
-            </label>
-            <select
-              disabled={updateTaskMutation.isPending}
-              className="
-                w-full px-3 py-2 text-sm bg-white border border-border-custom rounded-md 
-                text-foreground outline-none cursor-pointer transition uppercase font-semibold
-                focus:border-foreground focus:ring-1 focus:ring-foreground
-              "
-              {...registerEdit("status")}
-            >
-              <option value="todo">Todo</option>
-              <option value="in-progress">In Progress</option>
-              <option value="done">Done</option>
-            </select>
+          <div className="grid grid-cols-2 gap-3.5">
+            <div className="flex flex-col gap-1.5 select-none">
+              <label className="text-xs font-semibold text-foreground tracking-tight">
+                Category
+              </label>
+              <select
+                disabled={updateTaskMutation.isPending}
+                className="
+                  w-full px-3 py-2 text-sm bg-white border border-border-custom rounded-md 
+                  text-foreground outline-none cursor-pointer transition uppercase font-semibold
+                  focus:border-foreground focus:ring-1 focus:ring-foreground
+                "
+                {...registerEdit("category")}
+              >
+                <option value="personal">Personal</option>
+                <option value="work">Work</option>
+                <option value="study">Study</option>
+                <option value="health">Health</option>
+              </select>
+            </div>
+
+            <div className="flex flex-col gap-1.5 select-none">
+              <label className="text-xs font-semibold text-foreground tracking-tight">
+                Priority
+              </label>
+              <select
+                disabled={updateTaskMutation.isPending}
+                className="
+                  w-full px-3 py-2 text-sm bg-white border border-border-custom rounded-md 
+                  text-foreground outline-none cursor-pointer transition uppercase font-semibold
+                  focus:border-foreground focus:ring-1 focus:ring-foreground
+                "
+                {...registerEdit("priority")}
+              >
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="critical">Critical</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3.5">
+            <div className="flex flex-col gap-1.5 select-none">
+              <label className="text-xs font-semibold text-foreground tracking-tight">
+                Due Date
+              </label>
+              <input
+                type="date"
+                disabled={updateTaskMutation.isPending}
+                className="
+                  w-full px-3 py-2 text-sm bg-white border border-border-custom rounded-md 
+                  text-foreground outline-none cursor-pointer transition
+                  focus:border-foreground focus:ring-1 focus:ring-foreground
+                "
+                {...registerEdit("dueDate")}
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5 select-none">
+              <label className="text-xs font-semibold text-foreground tracking-tight">
+                Status
+              </label>
+              <select
+                disabled={updateTaskMutation.isPending}
+                className="
+                  w-full px-3 py-2 text-sm bg-white border border-border-custom rounded-md 
+                  text-foreground outline-none cursor-pointer transition uppercase font-semibold
+                  focus:border-foreground focus:ring-1 focus:ring-foreground
+                "
+                {...registerEdit("status")}
+              >
+                <option value="todo">Todo</option>
+                <option value="in-progress">In Progress</option>
+                <option value="done">Done</option>
+              </select>
+            </div>
           </div>
 
           <div className="flex justify-end gap-2 pt-2 select-none">

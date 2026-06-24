@@ -16,7 +16,7 @@ export const createTask = asyncHandler(async (req, res) => {
  */
 export const getAllTasks = asyncHandler(async (req, res) => {
   const userId = req.user._id;
-  const tasks = await taskService.getAllTasks(userId);
+  const tasks = await taskService.getAllTasks(userId, req.query);
   res.status(200).json(new ApiResponse(200, 'Tasks retrieved successfully', tasks));
 });
 
@@ -48,4 +48,25 @@ export const deleteTask = asyncHandler(async (req, res) => {
   const userId = req.user._id;
   await taskService.deleteTask(taskId, userId);
   res.status(200).json(new ApiResponse(200, 'Task deleted successfully'));
+});
+
+/**
+ * Add a work log to a task
+ */
+export const addTaskLog = asyncHandler(async (req, res) => {
+  const taskId = req.params.id;
+  const userId = req.user._id;
+  const { content } = req.body;
+  const updatedTask = await taskService.addTaskLog(taskId, content, userId);
+  res.status(201).json(new ApiResponse(201, 'Work log added successfully', updatedTask));
+});
+
+/**
+ * Delete a work log from a task
+ */
+export const deleteTaskLog = asyncHandler(async (req, res) => {
+  const { taskId, logId } = req.params;
+  const userId = req.user._id;
+  const updatedTask = await taskService.deleteTaskLog(taskId, logId, userId);
+  res.status(200).json(new ApiResponse(200, 'Work log deleted successfully', updatedTask));
 });

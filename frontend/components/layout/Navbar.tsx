@@ -21,9 +21,9 @@ export const Navbar: React.FC<NavbarProps> = ({ minimal = false }) => {
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 select-none group">
           <div className="w-5.5 h-5.5 rounded bg-foreground flex items-center justify-center font-bold text-xs text-background">
-            F
+            P
           </div>
-          <span className="font-semibold text-sm tracking-tight text-foreground">Focus</span>
+          <span className="font-semibold text-sm tracking-tight text-foreground">Planora</span>
         </Link>
 
         {minimal ? (

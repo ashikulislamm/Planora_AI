@@ -6,6 +6,10 @@ export interface Task {
   title: string;
   description: string;
   status: "todo" | "in-progress" | "done";
+  priority: "low" | "medium" | "high" | "critical";
+  dueDate?: string | null;
+  category: "work" | "personal" | "study" | "health";
+  logs?: { _id: string; content: string; createdAt: string }[];
   userId: string;
   createdAt: string;
   updatedAt: string;
@@ -15,8 +19,8 @@ export const taskService = {
   /**
    * Fetch all tasks created by the logged-in user
    */
-  async getTasks(): Promise<ApiResponse<Task[]>> {
-    const response = await apiClient.get<ApiResponse<Task[]>>("/tasks");
+  async getTasks(params?: Record<string, any>): Promise<ApiResponse<Task[]>> {
+    const response = await apiClient.get<ApiResponse<Task[]>>("/tasks", { params });
     return response.data;
   },
 
@@ -31,15 +35,22 @@ export const taskService = {
   /**
    * Create a new task
    */
-  async createTask(data: { title: string; description: string; status?: string }): Promise<ApiResponse<Task>> {
+  async createTask(data: {
+    title: string;
+    description: string;
+    status?: string;
+    priority?: string;
+    dueDate?: string | null;
+    category?: string;
+  }): Promise<ApiResponse<Task>> {
     const response = await apiClient.post<ApiResponse<Task>>("/tasks", data);
     return response.data;
   },
 
   /**
-   * Update task details (title, description, status)
+   * Update task details (title, description, status, priority, dueDate, category)
    */
-  async updateTask(id: string, data: Partial<Omit<Task, "_id" | "userId" | "createdAt" | "updatedAt">>): Promise<ApiResponse<Task>> {
+  async updateTask(id: string, data: Partial<Omit<Task, "_id" | "userId" | "createdAt" | "updatedAt" | "logs">>): Promise<ApiResponse<Task>> {
     const response = await apiClient.patch<ApiResponse<Task>>(`/tasks/${id}`, data);
     return response.data;
   },
@@ -49,6 +60,22 @@ export const taskService = {
    */
   async deleteTask(id: string): Promise<ApiResponse<null>> {
     const response = await apiClient.delete<ApiResponse<null>>(`/tasks/${id}`);
+    return response.data;
+  },
+
+  /**
+   * Add a work log update to a task
+   */
+  async addLog(taskId: string, content: string): Promise<ApiResponse<Task>> {
+    const response = await apiClient.post<ApiResponse<Task>>(`/tasks/${taskId}/logs`, { content });
+    return response.data;
+  },
+
+  /**
+   * Delete a work log from a task
+   */
+  async deleteLog(taskId: string, logId: string): Promise<ApiResponse<Task>> {
+    const response = await apiClient.delete<ApiResponse<Task>>(`/tasks/${taskId}/logs/${logId}`);
     return response.data;
   },
 };

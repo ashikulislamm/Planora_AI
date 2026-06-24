@@ -15,12 +15,12 @@ export const Footer: React.FC<FooterProps> = ({ minimal = false }) => {
         <div className="flex flex-col items-center sm:items-start gap-1">
           <div className="flex items-center gap-2 select-none">
             <div className="w-5 h-5 rounded bg-foreground flex items-center justify-center font-bold text-xs text-background">
-              F
+              P
             </div>
-            <span className="font-semibold text-foreground text-sm leading-none">Focus</span>
+            <span className="font-semibold text-foreground text-sm leading-none">Planora</span>
           </div>
           <p className="text-xs text-secondary-text mt-1">
-            © {new Date().getFullYear()} Focus Inc. All rights reserved.
+            © {new Date().getFullYear()} Planora Inc. All rights reserved.
           </p>
         </div>
 
