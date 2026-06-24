@@ -10,7 +10,7 @@ import ApiError from './utils/ApiError.js';
 const app = express();
 
 // Set security HTTP headers
-app.use(helmet());
+//app.use(helmet());
 
 // Enable CORS with support for credentials (cookies)
 /*app.use(
