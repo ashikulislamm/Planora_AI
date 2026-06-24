@@ -23,6 +23,27 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Focus — Minimalist Task Manager",
   description: "A clean, modern, and highly polished task manager built for professionals.",
+  keywords: ["task manager", "focus", "todo app", "project management", "productivity", "minimalist task manager", "productivity app"],
+  authors: [{ name: "Md Ashikul Islam" }],
+  creator: "Md Ashikul Islam",
+  applicationName: "Focus",
+  openGraph: {
+    title: "Focus — Minimalist Task Manager",
+    description: "A clean, modern, and highly polished task manager built for professionals.",
+    siteName: "Focus Task Manager",
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Focus — Minimalist Task Manager",
+    description: "A clean, modern, and highly polished task manager built for professionals.",
+  },
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+    apple: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({
