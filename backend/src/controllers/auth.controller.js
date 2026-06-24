@@ -13,7 +13,7 @@ export const register = asyncHandler(async (req, res) => {
   res
     .status(201)
     .cookie('token', token, cookieOptions)
-    .json(new ApiResponse(201, 'User registered successfully', { user }));
+    .json(new ApiResponse(201, 'User registered successfully', { user, token }));
 });
 
 /**
@@ -26,7 +26,7 @@ export const login = asyncHandler(async (req, res) => {
   res
     .status(200)
     .cookie('token', token, cookieOptions)
-    .json(new ApiResponse(200, 'Login successful', { user }));
+    .json(new ApiResponse(200, 'Login successful', { user, token }));
 });
 
 /**

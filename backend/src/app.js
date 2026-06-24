@@ -10,15 +10,31 @@ import ApiError from './utils/ApiError.js';
 const app = express();
 
 // Set security HTTP headers
-//app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
 
 // Enable CORS with support for credentials (cookies)
-/*app.use(
+const allowedOrigins = process.env.CLIENT_URL
+  ? process.env.CLIENT_URL.split(',').map(url => url.trim())
+  : ['http://localhost:5173'];
+
+app.use(
   cors({
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps, postman, curl)
+      if (!origin) return callback(null, true);
+      
+      if (allowedOrigins.indexOf(origin) !== -1 || allowedOrigins.includes('*')) {
+        callback(null, true);
+      } else {
+        console.warn(`CORS blocked request from origin: ${origin}`);
+        callback(new Error(`CORS blocked request from origin: ${origin}. Add it to CLIENT_URL in env.`));
+      }
+    },
     credentials: true,
   })
-);*/
+);
 
 // Development logging
 if (process.env.NODE_ENV !== 'production') {
