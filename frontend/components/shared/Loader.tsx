@@ -113,3 +113,11 @@ export const DashboardPageSkeleton: React.FC = () => {
     </div>
   );
 };
+export const SubtaskSkeleton: React.FC = () => {
+  return (
+    <div className="flex items-center gap-2 p-2">
+      <Skeleton className="h-3 w-4" />
+      <Skeleton className="h-3 w-32" />
+    </div>
+  );
+};

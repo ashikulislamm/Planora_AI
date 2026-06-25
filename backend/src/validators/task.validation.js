@@ -127,3 +127,64 @@ export const taskIdSchema = z.object({
       .regex(/^[0-9a-fA-F]{24}$/, 'Invalid task ID format. Must be a 24-character hex string.'),
   }),
 });
+
+export const subtaskParamsSchema = z.object({
+  params: z.object({
+    taskId: z
+      .string()
+      .regex(/^[0-9a-fA-F]{24}$/, 'Invalid task ID format. Must be a 24-character hex string.'),
+    subtaskId: z
+      .string()
+      .regex(/^[0-9a-fA-F]{24}$/, 'Invalid subtask ID format. Must be a 24-character hex string.'),
+  }),
+});
+
+export const addSubtaskSchema = z.object({
+  params: z.object({
+    taskId: z
+      .string()
+      .regex(/^[0-9a-fA-F]{24}$/, 'Invalid task ID format. Must be a 24-character hex string.'),
+  }),
+  body: z.object({
+    title: z
+      .string({ required_error: 'Title is required' })
+      .trim()
+      .min(1, 'Title cannot be empty')
+      .max(100, 'Title must be at most 100 characters'),
+    dueDate: z
+      .string()
+      .refine((val) => !val || !isNaN(Date.parse(val)), {
+        message: 'Invalid due date format',
+      })
+      .optional()
+      .nullable(),
+  }),
+});
+
+export const updateSubtaskSchema = z.object({
+  params: z.object({
+    taskId: z
+      .string()
+      .regex(/^[0-9a-fA-F]{24}$/, 'Invalid task ID format. Must be a 24-character hex string.'),
+    subtaskId: z
+      .string()
+      .regex(/^[0-9a-fA-F]{24}$/, 'Invalid subtask ID format. Must be a 24-character hex string.'),
+  }),
+  body: z.object({
+    title: z
+      .string()
+      .trim()
+      .min(1, 'Title cannot be empty')
+      .max(100, 'Title must be at most 100 characters')
+      .optional(),
+    completed: z.boolean().optional(),
+    dueDate: z
+      .string()
+      .refine((val) => !val || !isNaN(Date.parse(val)), {
+        message: 'Invalid due date format',
+      })
+      .optional()
+      .nullable(),
+  }),
+});
+

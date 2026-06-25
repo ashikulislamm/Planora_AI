@@ -20,6 +20,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
 import { CommandPalette } from "../../components/shared/CommandPalette";
 import { Button } from "../../components/shared/Button";
+import LOGO from "../../public/LOGO.png";
+import Image from "next/image";
 
 // Shared context for modals and palette triggers in children
 interface DashboardLayoutContextType {
@@ -69,8 +71,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="animate-pulse flex flex-col items-center gap-2">
-          <div className="w-8 h-8 rounded bg-foreground flex items-center justify-center font-bold text-sm text-background select-none">
-            F
+          <div className="w-8 h-8 rounded  flex items-center justify-center font-bold text-sm text-background select-none">
+            <Image src={LOGO} alt="Logo" className="w-12 h-8" />
           </div>
           <span className="text-xs text-secondary-text tracking-wider">Verifying session...</span>
         </div>
@@ -133,13 +135,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <aside className="hidden md:flex flex-col w-64 border-r border-border-custom bg-secondary-bg shrink-0">
           {/* Logo */}
           <div className="h-16 px-6 border-b border-border-custom flex items-center gap-2.5 bg-secondary-bg select-none">
-            <div className="w-5.5 h-5.5 rounded bg-foreground flex items-center justify-center font-bold text-xs text-background">
-              F
+            <div className="w-5.5 h-5.5 rounded flex items-center justify-center font-bold text-xs text-background">
+              <Image src={LOGO} alt="Logo" className="w-5.5 h-5.5" />
             </div>
-            <span className="font-semibold text-sm tracking-tight text-foreground">Focus</span>
-            <span className="text-xs font-bold text-secondary-text border border-border-custom bg-white px-1.5 py-0.5 rounded leading-none uppercase ml-auto">
-              SaaS
-            </span>
+            <span className="font-semibold text-sm tracking-tight text-foreground">Planora</span>
           </div>
 
           {/* Navigation Links */}

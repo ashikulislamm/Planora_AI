@@ -52,6 +52,18 @@ class TaskService {
 
     let tasks = await dbQuery.lean();
 
+    // Attach progressPercentage manually since lean() queries bypass schema virtuals
+    tasks = tasks.map(t => {
+      const subtasks = t.subtasks || [];
+      if (subtasks.length === 0) {
+        t.progressPercentage = t.status === 'done' ? 100 : 0;
+      } else {
+        const completedCount = subtasks.filter((s) => s.completed).length;
+        t.progressPercentage = Math.round((completedCount / subtasks.length) * 100);
+      }
+      return t;
+    });
+
     // Custom sort in-memory for priorities
     if (sort === 'priority' || sort === '-priority') {
       const priorityWeights = {
@@ -83,6 +95,14 @@ class TaskService {
       throw new ApiError(403, 'Access denied. You do not own this task.');
     }
 
+    const subtasks = task.subtasks || [];
+    if (subtasks.length === 0) {
+      task.progressPercentage = task.status === 'done' ? 100 : 0;
+    } else {
+      const completedCount = subtasks.filter((s) => s.completed).length;
+      task.progressPercentage = Math.round((completedCount / subtasks.length) * 100);
+    }
+
     return task;
   }
 
@@ -109,6 +129,9 @@ class TaskService {
     let generalUpdated = false;
 
     if (updateData.status !== undefined && updateData.status !== task.status) {
+      if (task.subtasks && task.subtasks.length > 0) {
+        throw new ApiError(400, 'Cannot manually update status when subtasks exist');
+      }
       statusChanged = true;
     }
     if (updateData.priority !== undefined && updateData.priority !== task.priority) {
@@ -118,6 +141,18 @@ class TaskService {
       updateData.dueDate !== undefined &&
       (updateData.dueDate ? new Date(updateData.dueDate).getTime() : null) !== (task.dueDate ? new Date(task.dueDate).getTime() : null)
     ) {
+      if (updateData.dueDate && task.subtasks && task.subtasks.length > 0) {
+        const newParentDueDate = new Date(updateData.dueDate);
+        const invalidSubtask = task.subtasks.find(
+          (s) => s.dueDate && new Date(s.dueDate) > newParentDueDate
+        );
+        if (invalidSubtask) {
+          throw new ApiError(
+            400,
+            `Cannot set parent due date earlier than subtask due date: "${invalidSubtask.title}"`
+          );
+        }
+      }
       dueDateChanged = true;
     }
     if (
@@ -304,6 +339,222 @@ class TaskService {
     });
 
     return task;
+  }
+
+  /**
+   * Helper to recalculate parent task status based on subtasks completion
+   */
+  updateParentTaskStatus(task) {
+    if (!task.subtasks || task.subtasks.length === 0) {
+      return { statusChanged: false };
+    }
+    const total = task.subtasks.length;
+    const completed = task.subtasks.filter((s) => s.completed).length;
+    const oldStatus = task.status;
+
+    let newStatus = 'todo';
+    if (completed === total) {
+      newStatus = 'done';
+    } else if (completed > 0) {
+      newStatus = 'in-progress';
+    }
+
+    if (task.status !== newStatus) {
+      task.status = newStatus;
+      if (newStatus === 'done') {
+        task.completedAt = new Date();
+      } else {
+        task.completedAt = undefined;
+      }
+      return { statusChanged: true, oldStatus, newStatus };
+    }
+    return { statusChanged: false };
+  }
+
+  /**
+   * Helper to save task and sync parent status side-effects
+   */
+  async saveTaskAndSync(task, userId) {
+    const statusSync = this.updateParentTaskStatus(task);
+    const updatedTask = await task.save();
+
+    if (statusSync.statusChanged) {
+      await activityService.logActivity(userId, task._id, 'status_changed', {
+        title: task.title,
+        oldStatus: statusSync.oldStatus,
+        newStatus: statusSync.newStatus,
+      });
+
+      if (statusSync.newStatus === 'done' && task.isRecurring) {
+        await this.generateNextOccurrence(task, userId);
+      }
+    }
+    return updatedTask;
+  }
+
+  /**
+   * Add a subtask to a task
+   */
+  async addSubtask(taskId, subtaskData, userId) {
+    const task = await Task.findById(taskId);
+    if (!task) {
+      throw new ApiError(404, 'Task not found');
+    }
+    if (task.userId.toString() !== userId.toString()) {
+      throw new ApiError(403, 'Access denied. You do not own this task.');
+    }
+
+    if (task.subtasks && task.subtasks.length >= 100) {
+      throw new ApiError(400, 'Subtask limit reached. Maximum of 100 subtasks allowed.');
+    }
+
+    // Due date validation: subtaskDueDate <= parentDueDate
+    if (subtaskData.dueDate && task.dueDate) {
+      if (new Date(subtaskData.dueDate) > new Date(task.dueDate)) {
+        throw new ApiError(400, 'Subtask due date cannot exceed parent task due date.');
+      }
+    }
+
+    const newSubtask = {
+      title: subtaskData.title,
+      dueDate: subtaskData.dueDate ? new Date(subtaskData.dueDate) : undefined,
+      completed: false,
+      createdAt: new Date(),
+    };
+
+    task.subtasks.push(newSubtask);
+    const updatedTask = await this.saveTaskAndSync(task, userId);
+
+    const addedSubtask = updatedTask.subtasks[updatedTask.subtasks.length - 1];
+    await activityService.logActivity(userId, task._id, 'subtask_created', {
+      taskTitle: task.title,
+      subtaskTitle: addedSubtask.title,
+    });
+
+    return updatedTask;
+  }
+
+  /**
+   * Update a subtask
+   */
+  async updateSubtask(taskId, subtaskId, subtaskUpdateData, userId) {
+    const task = await Task.findById(taskId);
+    if (!task) {
+      throw new ApiError(404, 'Task not found');
+    }
+    if (task.userId.toString() !== userId.toString()) {
+      throw new ApiError(403, 'Access denied. You do not own this task.');
+    }
+
+    const subtask = task.subtasks.id(subtaskId);
+    if (!subtask) {
+      throw new ApiError(404, 'Subtask not found');
+    }
+
+    const oldCompleted = subtask.completed;
+    const oldDueDate = subtask.dueDate;
+
+    if (subtaskUpdateData.title !== undefined) {
+      subtask.title = subtaskUpdateData.title;
+    }
+
+    // Due date validation
+    if (subtaskUpdateData.dueDate !== undefined) {
+      const newSubtaskDueDate = subtaskUpdateData.dueDate ? new Date(subtaskUpdateData.dueDate) : null;
+      if (newSubtaskDueDate && task.dueDate && newSubtaskDueDate > new Date(task.dueDate)) {
+        throw new ApiError(400, 'Subtask due date cannot exceed parent task due date.');
+      }
+      subtask.dueDate = newSubtaskDueDate || undefined;
+    }
+
+    let subtaskStatusLogged = false;
+    if (subtaskUpdateData.completed !== undefined && subtaskUpdateData.completed !== subtask.completed) {
+      subtask.completed = subtaskUpdateData.completed;
+      subtask.completedAt = subtaskUpdateData.completed ? new Date() : undefined;
+      subtaskStatusLogged = true;
+    }
+
+    const updatedTask = await this.saveTaskAndSync(task, userId);
+    const updatedSubtask = updatedTask.subtasks.id(subtaskId);
+
+    if (subtaskStatusLogged) {
+      await activityService.logActivity(userId, task._id, updatedSubtask.completed ? 'subtask_completed' : 'subtask_reopened', {
+        taskTitle: task.title,
+        subtaskTitle: updatedSubtask.title,
+      });
+    }
+
+    if (subtaskUpdateData.dueDate !== undefined && 
+        (subtaskUpdateData.dueDate ? new Date(subtaskUpdateData.dueDate).getTime() : null) !== (oldDueDate ? new Date(oldDueDate).getTime() : null)) {
+      await activityService.logActivity(userId, task._id, 'subtask_due_date_changed', {
+        taskTitle: task.title,
+        subtaskTitle: updatedSubtask.title,
+        newDueDate: updatedSubtask.dueDate,
+      });
+    }
+
+    return updatedTask;
+  }
+
+  /**
+   * Delete a subtask
+   */
+  async deleteSubtask(taskId, subtaskId, userId) {
+    const task = await Task.findById(taskId);
+    if (!task) {
+      throw new ApiError(404, 'Task not found');
+    }
+    if (task.userId.toString() !== userId.toString()) {
+      throw new ApiError(403, 'Access denied. You do not own this task.');
+    }
+
+    const subtask = task.subtasks.id(subtaskId);
+    if (!subtask) {
+      throw new ApiError(404, 'Subtask not found');
+    }
+
+    const subtaskTitle = subtask.title;
+    task.subtasks = task.subtasks.filter((s) => s._id.toString() !== subtaskId.toString());
+
+    const updatedTask = await this.saveTaskAndSync(task, userId);
+
+    await activityService.logActivity(userId, task._id, 'subtask_deleted', {
+      taskTitle: task.title,
+      subtaskTitle: subtaskTitle,
+    });
+
+    return updatedTask;
+  }
+
+  /**
+   * Toggle completion of subtask
+   */
+  async toggleSubtask(taskId, subtaskId, userId) {
+    const task = await Task.findById(taskId);
+    if (!task) {
+      throw new ApiError(404, 'Task not found');
+    }
+    if (task.userId.toString() !== userId.toString()) {
+      throw new ApiError(403, 'Access denied. You do not own this task.');
+    }
+
+    const subtask = task.subtasks.id(subtaskId);
+    if (!subtask) {
+      throw new ApiError(404, 'Subtask not found');
+    }
+
+    subtask.completed = !subtask.completed;
+    subtask.completedAt = subtask.completed ? new Date() : undefined;
+
+    const updatedTask = await this.saveTaskAndSync(task, userId);
+    const updatedSubtask = updatedTask.subtasks.id(subtaskId);
+
+    await activityService.logActivity(userId, task._id, updatedSubtask.completed ? 'subtask_completed' : 'subtask_reopened', {
+      taskTitle: task.title,
+      subtaskTitle: updatedSubtask.title,
+    });
+
+    return updatedTask;
   }
 }
 

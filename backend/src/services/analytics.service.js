@@ -39,6 +39,12 @@ class AnalyticsService {
     let monthlyCreated = 0;
     let monthlyCompleted = 0;
 
+    let totalSubtasks = 0;
+    let completedSubtasks = 0;
+    let sumOfTaskProgress = 0;
+    const categoryCompletedCount = { work: 0, personal: 0, study: 0, health: 0 };
+    const priorityCompletedCount = { low: 0, medium: 0, high: 0, critical: 0 };
+
     tasks.forEach((task) => {
       // Status mapping ('in-progress' -> 'inProgress')
       if (task.status === 'todo') statusDistribution.todo++;
@@ -57,7 +63,29 @@ class AnalyticsService {
 
       if (isDone) {
         completedTasks++;
+        if (categoryCompletedCount[task.category] !== undefined) {
+          categoryCompletedCount[task.category]++;
+        }
+        const priorityVal = task.priority || 'medium';
+        if (priorityCompletedCount[priorityVal] !== undefined) {
+          priorityCompletedCount[priorityVal]++;
+        }
       }
+
+      // Calculate subtasks metrics
+      const subtaskCount = task.subtasks ? task.subtasks.length : 0;
+      const completedSubtaskCount = task.subtasks ? task.subtasks.filter(s => s.completed).length : 0;
+      
+      totalSubtasks += subtaskCount;
+      completedSubtasks += completedSubtaskCount;
+
+      let taskProgress = 0;
+      if (subtaskCount > 0) {
+        taskProgress = Math.round((completedSubtaskCount / subtaskCount) * 100);
+      } else {
+        taskProgress = task.status === 'done' ? 100 : 0;
+      }
+      sumOfTaskProgress += taskProgress;
 
       // Check weekly stats
       if (createdAt >= startOfWeek) {
@@ -77,6 +105,32 @@ class AnalyticsService {
     });
 
     const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+    const subtaskCompletionRate = totalSubtasks > 0 ? Math.round((completedSubtasks / totalSubtasks) * 100) : 0;
+    const averageTaskProgress = totalTasks > 0 ? Math.round(sumOfTaskProgress / totalTasks) : 0;
+
+    // Most productive category (highest completed tasks)
+    let mostProductiveCategory = 'None';
+    let maxCategoryCompleted = 0;
+    Object.keys(categoryCompletedCount).forEach((cat) => {
+      if (categoryCompletedCount[cat] > maxCategoryCompleted) {
+        maxCategoryCompleted = categoryCompletedCount[cat];
+        mostProductiveCategory = cat;
+      }
+    });
+
+    // Most completed priority (highest completed tasks)
+    let mostCompletedPriority = 'None';
+    let maxPriorityCompleted = 0;
+    Object.keys(priorityCompletedCount).forEach((pr) => {
+      if (priorityCompletedCount[pr] > maxPriorityCompleted) {
+        maxPriorityCompleted = priorityCompletedCount[pr];
+        mostCompletedPriority = pr;
+      }
+    });
+
+    const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1);
+    const mostProductiveCategoryFormatted = mostProductiveCategory !== 'None' ? capitalize(mostProductiveCategory) : 'None';
+    const mostCompletedPriorityFormatted = mostCompletedPriority !== 'None' ? capitalize(mostCompletedPriority) : 'None';
 
     // 4. Calculate trend charts data
     // Last 7 days trend
@@ -162,6 +216,12 @@ class AnalyticsService {
       completionRate,
       totalTasks,
       completedTasks,
+      totalSubtasks,
+      completedSubtasks,
+      subtaskCompletionRate,
+      averageTaskProgress,
+      mostProductiveCategory: mostProductiveCategoryFormatted,
+      mostCompletedPriority: mostCompletedPriorityFormatted,
       overdueTasks: tasks.filter((t) => {
         if (!t.dueDate || t.status === 'done') return false;
         const today = new Date();

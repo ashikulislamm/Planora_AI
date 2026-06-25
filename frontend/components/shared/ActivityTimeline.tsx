@@ -138,23 +138,59 @@ export default function ActivityTimeline({ activities }: ActivityTimelineProps) 
           color: "text-neutral-800 border-neutral-300 bg-neutral-50",
           text: (act: Activity) => `Deleted task: "${act.metadata?.title || "Task"}"`
         };
+      case "subtask_created":
+        return {
+          icon: PlusCircle,
+          color: "text-neutral-900 border-neutral-900 bg-neutral-50",
+          text: (act: Activity) => `Created subtask: "${act.metadata?.subtaskTitle}" (Parent: "${act.metadata?.taskTitle || act.taskId?.title || "Task"}")`
+        };
+      case "subtask_completed":
+        return {
+          icon: CheckCircle,
+          color: "text-neutral-900 border-neutral-900 bg-neutral-50",
+          text: (act: Activity) => `Completed subtask: "${act.metadata?.subtaskTitle}" (Parent: "${act.metadata?.taskTitle || act.taskId?.title || "Task"}")`
+        };
+      case "subtask_reopened":
+        return {
+          icon: Clock,
+          color: "text-neutral-500 border-neutral-200 bg-neutral-50",
+          text: (act: Activity) => `Reopened subtask: "${act.metadata?.subtaskTitle}" (Parent: "${act.metadata?.taskTitle || act.taskId?.title || "Task"}")`
+        };
+      case "subtask_deleted":
+        return {
+          icon: Trash2,
+          color: "text-neutral-500 border-neutral-200 bg-neutral-50",
+          text: (act: Activity) => `Deleted subtask: "${act.metadata?.subtaskTitle}" (Parent: "${act.metadata?.taskTitle || act.taskId?.title || "Task"}")`
+        };
+      case "subtask_due_date_changed":
+        return {
+          icon: Calendar,
+          color: "text-neutral-500 border-neutral-200 bg-neutral-50",
+          text: (act: Activity) => `Updated subtask deadline: "${act.metadata?.subtaskTitle}" to ${act.metadata?.newDueDate ? new Date(act.metadata.newDueDate).toLocaleDateString() : "No Date"} (Parent: "${act.metadata?.taskTitle || act.taskId?.title || "Task"}")`
+        };
       case "focus_started":
         return {
           icon: Play,
           color: "text-neutral-900 border-neutral-900 bg-neutral-100",
-          text: (act: Activity) => `Started focus session on "${act.metadata?.taskTitle || "Task"}" (${act.metadata?.duration}m)`
+          text: (act: Activity) => act.metadata?.subtaskTitle
+            ? `Started focusing on subtask: "${act.metadata.subtaskTitle}" (Parent: "${act.metadata.taskTitle || "Task"}") (${act.metadata.duration}m)`
+            : `Started focus session on "${act.metadata?.taskTitle || "Task"}" (${act.metadata?.duration}m)`
         };
       case "focus_completed":
         return {
           icon: CheckSquare,
           color: "text-neutral-900 border-neutral-900 bg-neutral-50",
-          text: (act: Activity) => `Completed focus session on "${act.metadata?.taskTitle || "Task"}" (${act.metadata?.duration}m)`
+          text: (act: Activity) => act.metadata?.subtaskTitle
+            ? `Completed focus session on subtask: "${act.metadata.subtaskTitle}" (Parent: "${act.metadata.taskTitle || "Task"}") (${act.metadata.duration}m)`
+            : `Completed focus session on "${act.metadata?.taskTitle || "Task"}" (${act.metadata?.duration}m)`
         };
       case "focus_cancelled":
         return {
           icon: XOctagon,
           color: "text-neutral-400 border-neutral-200 bg-neutral-50",
-          text: (act: Activity) => `Cancelled focus session on "${act.metadata?.taskTitle || "Task"}"`
+          text: (act: Activity) => act.metadata?.subtaskTitle
+            ? `Cancelled focus session on subtask: "${act.metadata.subtaskTitle}" (Parent: "${act.metadata.taskTitle || "Task"}")`
+            : `Cancelled focus session on "${act.metadata?.taskTitle || "Task"}"`
         };
       default:
         return {

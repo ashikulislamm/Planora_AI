@@ -65,11 +65,45 @@ const taskSchema = new mongoose.Schema(
       required: [true, 'User ID is required'],
       index: true,
     },
+    subtasks: [
+      {
+        title: {
+          type: String,
+          required: [true, 'Subtask title is required'],
+          trim: true,
+        },
+        completed: {
+          type: Boolean,
+          default: false,
+        },
+        dueDate: {
+          type: Date,
+        },
+        completedAt: {
+          type: Date,
+        },
+        createdAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
   },
   {
     timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
   }
 );
+
+// Virtual property for automatic progress tracking
+taskSchema.virtual('progressPercentage').get(function () {
+  if (!this.subtasks || this.subtasks.length === 0) {
+    return this.status === 'done' ? 100 : 0;
+  }
+  const completedCount = this.subtasks.filter((s) => s.completed).length;
+  return Math.round((completedCount / this.subtasks.length) * 100);
+});
 
 // Indexes for query performance
 taskSchema.index({ userId: 1, status: 1 });

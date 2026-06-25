@@ -27,6 +27,7 @@ export default function FocusModePage() {
   
   // Local UI States
   const [selectedTaskId, setSelectedTaskId] = useState<string>("");
+  const [selectedSubtaskId, setSelectedSubtaskId] = useState<string>("");
   const [selectedDuration, setSelectedDuration] = useState<number>(25); // 25, 50, 90 mins
   const [isCustomDuration, setIsCustomDuration] = useState<boolean>(false);
   const [customDurationInput, setCustomDurationInput] = useState<string>("45");
@@ -63,6 +64,34 @@ export default function FocusModePage() {
       setSelectedTaskId(pendingTasks[0]._id);
     }
   }, [pendingTasks, selectedTaskId]);
+
+  // Extract task and subtask parameters from URL if present
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const taskIdParam = params.get("taskId");
+      const subtaskIdParam = params.get("subtaskId");
+      if (taskIdParam) {
+        setSelectedTaskId(taskIdParam);
+      }
+      if (subtaskIdParam) {
+        setSelectedSubtaskId(subtaskIdParam);
+      }
+    }
+  }, []);
+
+  // Clear subtask selection when task changes
+  useEffect(() => {
+    // Only reset if it is not the query parameter that was just loaded
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("taskId") !== selectedTaskId) {
+        setSelectedSubtaskId("");
+      }
+    } else {
+      setSelectedSubtaskId("");
+    }
+  }, [selectedTaskId]);
 
   // Handle active session loading & synchronization
   useEffect(() => {
@@ -106,8 +135,8 @@ export default function FocusModePage() {
 
   // Mutations
   const startSessionMutation = useMutation({
-    mutationFn: ({ taskId, duration }: { taskId: string; duration: number }) =>
-      focusService.startSession(taskId, duration),
+    mutationFn: ({ taskId, duration, subtaskId }: { taskId: string; duration: number; subtaskId?: string | null }) =>
+      focusService.startSession(taskId, duration, subtaskId),
     onSuccess: () => {
       refetchSession();
       success("Focus session started! Deep work mode activated.");
@@ -147,6 +176,20 @@ export default function FocusModePage() {
     },
   });
 
+  const updateSubtaskCompletionMutation = useMutation({
+    mutationFn: ({ taskId, subtaskId }: { taskId: string; subtaskId: string }) =>
+      taskService.updateSubtask(taskId, subtaskId, { completed: true }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["analytics"] });
+      success("Subtask marked as completed! Excellent work.");
+      setShowCompletionModal(false);
+    },
+    onError: (err: any) => {
+      error(err.response?.data?.message || "Failed to complete subtask");
+    },
+  });
+
   // Callbacks
   const handleStartSession = () => {
     if (!selectedTaskId) {
@@ -171,6 +214,7 @@ export default function FocusModePage() {
     startSessionMutation.mutate({
       taskId: selectedTaskId,
       duration: duration,
+      subtaskId: selectedSubtaskId || null,
     });
   };
 
@@ -262,7 +306,12 @@ export default function FocusModePage() {
               <div className="max-w-md mx-auto p-6 border border-neutral-200 rounded-2xl bg-neutral-50 text-left space-y-3.5 shadow-sm">
                 <div>
                   <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider block">CURRENT MISSION</span>
-                  <h3 className="text-sm font-bold text-neutral-900 mt-0.5">{activeTask?.title}</h3>
+                  <h3 className="text-sm font-bold text-neutral-900 mt-0.5">
+                    {currentSession?.subtask ? currentSession.subtask.title : activeTask?.title}
+                  </h3>
+                  {currentSession?.subtask && (
+                    <p className="text-[10px] text-neutral-500 font-semibold mt-1">Parent: {activeTask?.title}</p>
+                  )}
                 </div>
                 {activeTask?.description && (
                   <p className="text-xs text-neutral-500 leading-relaxed truncate">{activeTask.description}</p>
@@ -342,6 +391,32 @@ export default function FocusModePage() {
                     </div>
                   )}
                 </div>
+
+                {/* Subtask Selection Dropdown */}
+                {(() => {
+                  const selectedTask = pendingTasks.find(t => t._id === selectedTaskId);
+                  if (selectedTask && selectedTask.subtasks && selectedTask.subtasks.length > 0) {
+                    const incompleteSubtasks = selectedTask.subtasks.filter(s => !s.completed);
+                    return (
+                      <div className="flex flex-col gap-1.5 select-none animate-fadeIn">
+                        <label className="text-xs font-bold text-neutral-500 uppercase tracking-wider">Focus Subtask (Optional)</label>
+                        <select
+                          value={selectedSubtaskId}
+                          onChange={(e) => setSelectedSubtaskId(e.target.value)}
+                          className="w-full px-3 py-2.5 text-xs bg-white border border-neutral-200 rounded-lg text-neutral-900 outline-none cursor-pointer focus:border-neutral-900 animate-fadeIn"
+                        >
+                          <option value="">Focus on Entire Parent Task</option>
+                          {incompleteSubtasks.map((s) => (
+                            <option key={s._id} value={s._id}>
+                              Subtask: {s.title} {s.dueDate ? `(Due ${new Date(s.dueDate).toLocaleDateString(undefined, { month: "short", day: "numeric" })})` : ""}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
 
                 {/* Duration select */}
                 <div className="flex flex-col gap-1.5 select-none">
@@ -491,21 +566,38 @@ export default function FocusModePage() {
               </div>
 
               <div className="flex flex-col gap-2 pt-1">
-                {activeTask && (
+                {currentSession?.subtask ? (
                   <Button
                     variant="primary"
                     size="sm"
                     className="w-full"
                     onClick={() => {
-                      updateTaskStatusMutation.mutate({
-                        id: activeTask._id,
-                        status: "done"
+                      updateSubtaskCompletionMutation.mutate({
+                        taskId: activeTask?._id!,
+                        subtaskId: currentSession.subtaskId!
                       });
                     }}
-                    disabled={updateTaskStatusMutation.isPending}
+                    disabled={updateSubtaskCompletionMutation.isPending}
                   >
-                    Mark Task Done
+                    Mark Subtask Complete
                   </Button>
+                ) : (
+                  activeTask && (
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => {
+                        updateTaskStatusMutation.mutate({
+                          id: activeTask._id,
+                          status: "done"
+                        });
+                      }}
+                      disabled={updateTaskStatusMutation.isPending}
+                    >
+                      Mark Task Done
+                    </Button>
+                  )
                 )}
                 <Button
                   variant="outline"

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
+import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -31,7 +32,7 @@ import { Input } from "../../../components/shared/Input";
 import { Modal } from "../../../components/shared/Modal";
 import { ConfirmDialog } from "../../../components/shared/ConfirmDialog";
 import { EmptyState } from "../../../components/shared/EmptyState";
-import { TaskListSkeleton } from "../../../components/shared/Loader";
+import { TaskListSkeleton, SubtaskSkeleton } from "../../../components/shared/Loader";
 
 // Task Validation Schemas
 const taskSchema = z.object({
@@ -72,6 +73,13 @@ export default function MyTasksPage() {
   const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
   const [selectedTaskDetails, setSelectedTaskDetails] = useState<Task | null>(null);
   const [logContent, setLogContent] = useState("");
+
+  // Subtasks Local States
+  const [newSubtaskTitle, setNewSubtaskTitle] = useState("");
+  const [newSubtaskDueDate, setNewSubtaskDueDate] = useState("");
+  const [editingSubtaskId, setEditingSubtaskId] = useState<string | null>(null);
+  const [editingSubtaskTitle, setEditingSubtaskTitle] = useState("");
+  const [editingSubtaskDueDate, setEditingSubtaskDueDate] = useState("");
 
   // Form Hooks
   const {
@@ -201,6 +209,69 @@ export default function MyTasksPage() {
     },
   });
 
+  // Subtasks mutations
+  const addSubtaskMutation = useMutation({
+    mutationFn: ({ taskId, title, dueDate }: { taskId: string; title: string; dueDate?: string | null }) =>
+      taskService.addSubtask(taskId, { title, dueDate }),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      success("Subtask added successfully!");
+      if (selectedTaskDetails?._id === res.data._id) {
+        setSelectedTaskDetails(res.data);
+      }
+      setNewSubtaskTitle("");
+      setNewSubtaskDueDate("");
+    },
+    onError: (err: any) => {
+      error(err.response?.data?.message || "Failed to add subtask");
+    },
+  });
+
+  const toggleSubtaskMutation = useMutation({
+    mutationFn: ({ taskId, subtaskId }: { taskId: string; subtaskId: string }) =>
+      taskService.toggleSubtask(taskId, subtaskId),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      if (selectedTaskDetails?._id === res.data._id) {
+        setSelectedTaskDetails(res.data);
+      }
+    },
+    onError: (err: any) => {
+      error(err.response?.data?.message || "Failed to toggle subtask");
+    },
+  });
+
+  const updateSubtaskMutation = useMutation({
+    mutationFn: ({ taskId, subtaskId, data }: { taskId: string; subtaskId: string; data: Partial<{ title: string; completed: boolean; dueDate?: string | null }> }) =>
+      taskService.updateSubtask(taskId, subtaskId, data),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      success("Subtask updated successfully!");
+      if (selectedTaskDetails?._id === res.data._id) {
+        setSelectedTaskDetails(res.data);
+      }
+      setEditingSubtaskId(null);
+    },
+    onError: (err: any) => {
+      error(err.response?.data?.message || "Failed to update subtask");
+    },
+  });
+
+  const deleteSubtaskMutation = useMutation({
+    mutationFn: ({ taskId, subtaskId }: { taskId: string; subtaskId: string }) =>
+      taskService.deleteSubtask(taskId, subtaskId),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      success("Subtask deleted successfully!");
+      if (selectedTaskDetails?._id === res.data._id) {
+        setSelectedTaskDetails(res.data);
+      }
+    },
+    onError: (err: any) => {
+      error(err.response?.data?.message || "Failed to delete subtask");
+    },
+  });
+
   const isRecurringCreate = watchCreate("isRecurring");
   const isRecurringEdit = watchEdit("isRecurring");
 
@@ -209,6 +280,13 @@ export default function MyTasksPage() {
     updateTaskMutation.mutate({
       id: task._id,
       data: { status: newStatus },
+    });
+  };
+
+  const handleQuickSubtaskToggle = (task: Task, subtaskId: string) => {
+    toggleSubtaskMutation.mutate({
+      taskId: task._id,
+      subtaskId,
     });
   };
 
@@ -581,7 +659,7 @@ export default function MyTasksPage() {
                   exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ duration: 0.15 }}
                   onClick={() => setSelectedTaskDetails(task)}
-                  className="p-4.5 bg-white border border-border-custom rounded-lg shadow-xs hover:border-foreground/45 transition flex items-center justify-between gap-4 group cursor-pointer"
+                  className="p-4.5 bg-gradient-to-r from-gray-50 to-white border border-gray-300 rounded-lg shadow-xs hover:border-gray-500 hover:shadow-md transition flex items-center justify-between gap-4 group cursor-pointer"
                 >
                   <div className="flex items-start gap-3.5 min-w-0 flex-1">
                     {/* Status checkbox toggle */}
@@ -637,6 +715,71 @@ export default function MyTasksPage() {
                         {task.description}
                       </p>
 
+                      {/* Subtask progress display on card */}
+                      {task.subtasks && task.subtasks.length > 0 && (
+                        <div className="mt-3 space-y-2.5 select-none" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex justify-between items-center text-[10px] font-bold text-secondary-text uppercase">
+                            <span>{task.subtasks.filter((s) => s.completed).length} / {task.subtasks.length} Completed</span>
+                            <span>{task.progressPercentage ?? 0}%</span>
+                          </div>
+                          <div className="w-full bg-neutral-100 border border-border-custom/50 rounded-full h-1.5 overflow-hidden">
+                            <div 
+                              className="bg-neutral-900 h-full rounded-full transition-all duration-300"
+                              style={{ width: `${task.progressPercentage ?? 0}%` }}
+                            />
+                          </div>
+
+                          {/* Inline Subtasks checklist */}
+                          {toggleSubtaskMutation.isPending && selectedTaskDetails && selectedTaskDetails._id === task._id ? (
+                            <SubtaskSkeleton />
+                          ) : (
+                            <motion.div
+                              className="pt-2.5 border-t border-gray-200/30 space-y-1.5 max-h-40 overflow-y-auto"
+                              onClick={(e) => e.stopPropagation()}
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              exit={{ opacity: 0 }}
+                            >
+                              {task.subtasks.map((sub) => {
+                                const subOverdue = sub.dueDate && !sub.completed && new Date(sub.dueDate) < new Date(new Date().setHours(0,0,0,0));
+                                return (
+                                  <motion.div
+                                    key={sub._id}
+                                    className="flex items-center gap-2 text-left"
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
+                                    transition={{ duration: 0.15 }}
+                                  >
+                                    <button
+                                      onClick={() => handleQuickSubtaskToggle(task, sub._id)}
+                                      className="text-secondary-text hover:text-foreground shrink-0 transition transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-gray-400"
+                                      aria-label={sub.completed ? 'Reopen subtask' : 'Complete subtask'}
+                                      tabIndex={0}
+                                    >
+                                      {sub.completed ? (
+                                        <CheckCircle2 className="w-3.5 h-3.5 text-foreground" />
+                                      ) : (
+                                        <Circle className="w-3.5 h-3.5" />
+                                      )}
+                                    </button>
+                                    <span className={`text-[11px] font-medium truncate flex-1 ${sub.completed ? "line-through text-secondary-text" : "text-foreground"}`}
+                                    >
+                                      {sub.title}
+                                    </span>
+                                    {sub.dueDate && (
+                                      <span className={`text-[9px] px-1 bg-neutral-50 border rounded leading-none shrink-0 ${subOverdue ? "text-neutral-900 border-neutral-400 font-extrabold animate-pulse" : "text-secondary-text border-gray-300"}`}
+                                      >
+                                        {new Date(sub.dueDate).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                                      </span>
+                                    )}
+                                  </motion.div>
+                                );
+                              })}
+                            </motion.div>
+                          )}
+                        </div>
+                      )}
+
                       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-2.5 select-none text-[10px]">
                         <span className="text-secondary-text font-semibold uppercase bg-secondary-bg px-2 py-0.5 border border-border-custom rounded whitespace-nowrap">
                           Created {new Date(task.createdAt).toLocaleString(undefined, {
@@ -672,7 +815,7 @@ export default function MyTasksPage() {
 
                         {/* inline status selector */}
                         <div className="flex items-center gap-1 whitespace-nowrap shrink-0" onClick={(e) => e.stopPropagation()}>
-                          <span className="text-secondary-text font-medium">Status:</span>
+                          <span className="text-secondary-text font-medium focus:outline-none focus:ring-2 focus:ring-gray-400">Status:</span>
                           <select
                             value={task.status}
                             onChange={(e) =>
@@ -811,6 +954,15 @@ export default function MyTasksPage() {
                         <span>{selectedTaskDetails.dueDate ? formatDueDate(selectedTaskDetails.dueDate) : "None"}</span>
                       </span>
                     </div>
+                    <div className="col-span-2 border-t border-border-custom/50 pt-2.5 mt-1 select-none">
+                      <span className="text-[9px] font-bold text-secondary-text uppercase block">Focus Mode</span>
+                      <Link href={`/dashboard/focus?taskId=${selectedTaskDetails._id}`} className="inline-block">
+                        <span className="inline-flex items-center gap-1 text-xs font-bold mt-1 text-foreground hover:underline">
+                          <Clock className="w-3.5 h-3.5 text-secondary-text animate-pulse" />
+                          <span>Start Focus Session</span>
+                        </span>
+                      </Link>
+                    </div>
                   </div>
 
                   <div className="space-y-1">
@@ -819,6 +971,226 @@ export default function MyTasksPage() {
                       {selectedTaskDetails.description}
                     </p>
                   </div>
+                </div>
+
+                <hr className="border-border-custom" />
+
+                {/* Subtasks Section */}
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center select-none text-left">
+                    <div>
+                      <h4 className="text-xs font-bold text-foreground tracking-tight uppercase flex items-center gap-1.5">
+                        <CheckSquare className="w-4 h-4 text-secondary-text" />
+                        <span>Subtasks</span>
+                      </h4>
+                      <p className="text-[10px] text-secondary-text leading-tight mt-0.5">
+                        Break down work into smaller steps
+                      </p>
+                    </div>
+                    {selectedTaskDetails.subtasks && selectedTaskDetails.subtasks.length > 0 && (
+                      <span className="text-[10px] font-bold text-secondary-text px-2 py-0.5 border border-border-custom bg-secondary-bg rounded-md uppercase">
+                        {selectedTaskDetails.subtasks.filter(s => s.completed).length} / {selectedTaskDetails.subtasks.length} Completed
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Drawer Progress Bar */}
+                  {selectedTaskDetails.subtasks && selectedTaskDetails.subtasks.length > 0 && (
+                    <div className="space-y-1 select-none">
+                      <div className="w-full bg-neutral-100 border border-border-custom/50 rounded-full h-1.5 overflow-hidden">
+                        <div 
+                          className="bg-neutral-900 h-full rounded-full transition-all duration-300"
+                          style={{ width: `${selectedTaskDetails.progressPercentage ?? 0}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Subtask list */}
+                  <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                    {selectedTaskDetails.subtasks && selectedTaskDetails.subtasks.length > 0 ? (
+                      selectedTaskDetails.subtasks.map((subtask) => {
+                        const isOverdue = subtask.dueDate && !subtask.completed && new Date(subtask.dueDate) < new Date(new Date().setHours(0, 0, 0, 0));
+                        const isEditing = editingSubtaskId === subtask._id;
+                        
+                        return (
+                          <div 
+                            key={subtask._id} 
+                            className="p-2.5 bg-secondary-bg border border-border-custom rounded-md flex items-center justify-between gap-3 group/subtask transition hover:border-neutral-300 text-left"
+                          >
+                            {isEditing ? (
+                              <form 
+                                onSubmit={(e) => {
+                                  e.preventDefault();
+                                  if (editingSubtaskTitle.trim()) {
+                                    updateSubtaskMutation.mutate({
+                                      taskId: selectedTaskDetails._id,
+                                      subtaskId: subtask._id,
+                                      data: {
+                                        title: editingSubtaskTitle.trim(),
+                                        dueDate: editingSubtaskDueDate ? new Date(editingSubtaskDueDate).toISOString() : null,
+                                      }
+                                    });
+                                  }
+                                }}
+                                className="flex-1 flex flex-col gap-2"
+                              >
+                                <input
+                                  type="text"
+                                  value={editingSubtaskTitle}
+                                  onChange={(e) => setEditingSubtaskTitle(e.target.value)}
+                                  className="w-full text-xs px-2 py-1.5 border border-border-custom bg-white rounded outline-none focus:border-foreground"
+                                  placeholder="Subtask Title"
+                                  autoFocus
+                                />
+                                <div className="flex items-center justify-between gap-2">
+                                  <input
+                                    type="date"
+                                    value={editingSubtaskDueDate}
+                                    onChange={(e) => setEditingSubtaskDueDate(e.target.value)}
+                                    className="text-[10px] px-2 py-1 border border-border-custom bg-white rounded outline-none focus:border-foreground"
+                                  />
+                                  <div className="flex gap-1.5">
+                                    <Button 
+                                      type="button" 
+                                      variant="outline" 
+                                      size="sm" 
+                                      onClick={() => setEditingSubtaskId(null)}
+                                    >
+                                      Cancel
+                                    </Button>
+                                    <Button 
+                                      type="submit" 
+                                      variant="primary" 
+                                      size="sm" 
+                                      disabled={!editingSubtaskTitle.trim() || updateSubtaskMutation.isPending}
+                                    >
+                                      Save
+                                    </Button>
+                                  </div>
+                                </div>
+                              </form>
+                            ) : (
+                              <>
+                                <div className="flex items-start gap-2.5 min-w-0 flex-1">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      toggleSubtaskMutation.mutate({
+                                        taskId: selectedTaskDetails._id,
+                                        subtaskId: subtask._id,
+                                      });
+                                    }}
+                                    className="text-secondary-text hover:text-foreground shrink-0 mt-0.5 transition cursor-pointer"
+                                  >
+                                    {subtask.completed ? (
+                                      <CheckCircle2 className="w-4 h-4 text-foreground" />
+                                    ) : (
+                                      <Circle className="w-4 h-4" />
+                                    )}
+                                  </button>
+                                  <div className="min-w-0 flex-1">
+                                    <p className={`text-xs font-semibold text-foreground truncate ${subtask.completed ? "line-through text-secondary-text" : ""}`}>
+                                      {subtask.title}
+                                    </p>
+                                    <div className="flex flex-wrap items-center gap-1.5 mt-1 select-none text-[9px]">
+                                      {subtask.dueDate && (
+                                        <span className={`flex items-center gap-0.5 border px-1.5 py-0.5 rounded font-medium bg-white text-secondary-text ${isOverdue ? "text-neutral-900 border-neutral-400 font-bold" : "border-border-custom"}`}>
+                                          <Calendar className="w-2.5 h-2.5" />
+                                          <span>Due {new Date(subtask.dueDate).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</span>
+                                        </span>
+                                      )}
+                                      {isOverdue && (
+                                        <span className="border border-neutral-400 bg-neutral-100 text-neutral-900 px-1.5 py-0.5 rounded font-extrabold uppercase select-none animate-pulse">
+                                          Overdue
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="flex gap-1.5 shrink-0 opacity-0 group-hover/subtask:opacity-100 transition-opacity">
+                                  <Link href={`/dashboard/focus?taskId=${selectedTaskDetails._id}&subtaskId=${subtask._id}`} className="text-secondary-text hover:text-foreground p-0.5 hover:bg-hover-custom rounded transition cursor-pointer" title="Start Focus Mode on Subtask">
+                                    <Clock className="w-3.5 h-3.5" />
+                                  </Link>
+                                  <button
+                                    onClick={() => {
+                                      setEditingSubtaskId(subtask._id);
+                                      setEditingSubtaskTitle(subtask.title);
+                                      setEditingSubtaskDueDate(subtask.dueDate ? subtask.dueDate.split("T")[0] : "");
+                                    }}
+                                    className="text-secondary-text hover:text-foreground p-0.5 hover:bg-hover-custom rounded transition cursor-pointer"
+                                  >
+                                    <Edit2 className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      deleteSubtaskMutation.mutate({
+                                        taskId: selectedTaskDetails._id,
+                                        subtaskId: subtask._id,
+                                      });
+                                    }}
+                                    className="text-secondary-text hover:text-foreground p-0.5 hover:bg-hover-custom rounded transition cursor-pointer"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="text-center py-6 border border-dashed border-border-custom rounded-md text-xs text-secondary-text select-none">
+                        No subtasks added yet.
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Add subtask Form */}
+                  <form 
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      if (newSubtaskTitle.trim()) {
+                        addSubtaskMutation.mutate({
+                          taskId: selectedTaskDetails._id,
+                          title: newSubtaskTitle.trim(),
+                          dueDate: newSubtaskDueDate ? new Date(newSubtaskDueDate).toISOString() : null,
+                        });
+                      }
+                    }}
+                    className="space-y-2 pt-2 border-t border-border-custom"
+                  >
+                    <input
+                      type="text"
+                      placeholder="Add subtask title..."
+                      value={newSubtaskTitle}
+                      onChange={(e) => setNewSubtaskTitle(e.target.value)}
+                      disabled={addSubtaskMutation.isPending}
+                      className="w-full text-xs px-2.5 py-2 bg-white border border-border-custom rounded-md placeholder-secondary-text text-foreground outline-none transition focus:border-foreground focus:ring-1 focus:ring-foreground"
+                    />
+                    <div className="flex justify-between items-center gap-3">
+                      <div className="flex items-center gap-1.5">
+                        <label className="text-[9px] font-bold text-secondary-text uppercase select-none">Deadline:</label>
+                        <input
+                          type="date"
+                          value={newSubtaskDueDate}
+                          onChange={(e) => setNewSubtaskDueDate(e.target.value)}
+                          disabled={addSubtaskMutation.isPending}
+                          className="text-[11px] px-2 py-1 bg-white border border-border-custom rounded-md text-foreground outline-none cursor-pointer focus:border-foreground"
+                        />
+                      </div>
+                      <Button
+                        type="submit"
+                        variant="primary"
+                        size="sm"
+                        isLoading={addSubtaskMutation.isPending}
+                        disabled={!newSubtaskTitle.trim() || addSubtaskMutation.isPending}
+                      >
+                        Add Subtask
+                      </Button>
+                    </div>
+                  </form>
                 </div>
 
                 <hr className="border-border-custom" />

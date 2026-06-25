@@ -14,6 +14,9 @@ const focusSessionSchema = new mongoose.Schema(
       required: [true, 'Task ID is required'],
       index: true,
     },
+    subtaskId: {
+      type: mongoose.Schema.Types.ObjectId,
+    },
     duration: {
       type: Number,
       required: [true, 'Duration is required in minutes'],

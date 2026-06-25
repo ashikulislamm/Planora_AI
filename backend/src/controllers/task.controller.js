@@ -70,3 +70,45 @@ export const deleteTaskLog = asyncHandler(async (req, res) => {
   const updatedTask = await taskService.deleteTaskLog(taskId, logId, userId);
   res.status(200).json(new ApiResponse(200, 'Work log deleted successfully', updatedTask));
 });
+
+/**
+ * Add a subtask to a task
+ */
+export const addSubtask = asyncHandler(async (req, res) => {
+  const { taskId } = req.params;
+  const userId = req.user._id;
+  const task = await taskService.addSubtask(taskId, req.body, userId);
+  const taskWithProgress = await taskService.getTaskById(task._id, userId);
+  res.status(201).json(new ApiResponse(201, 'Subtask added successfully', taskWithProgress));
+});
+
+/**
+ * Update a subtask in a task
+ */
+export const updateSubtask = asyncHandler(async (req, res) => {
+  const { taskId, subtaskId } = req.params;
+  const userId = req.user._id;
+  const task = await taskService.updateSubtask(taskId, subtaskId, req.body, userId);
+  res.status(200).json(new ApiResponse(200, 'Subtask updated successfully', task));
+});
+
+/**
+ * Delete a subtask from a task
+ */
+export const deleteSubtask = asyncHandler(async (req, res) => {
+  const { taskId, subtaskId } = req.params;
+  const userId = req.user._id;
+  const task = await taskService.deleteSubtask(taskId, subtaskId, userId);
+  res.status(200).json(new ApiResponse(200, 'Subtask deleted successfully', task));
+});
+
+/**
+ * Toggle completion of a subtask
+ */
+export const toggleSubtask = asyncHandler(async (req, res) => {
+  const { taskId, subtaskId } = req.params;
+  const userId = req.user._id;
+  const task = await taskService.toggleSubtask(taskId, subtaskId, userId);
+  res.status(200).json(new ApiResponse(200, 'Subtask toggle status updated successfully', task));
+});
+

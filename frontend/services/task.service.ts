@@ -1,6 +1,15 @@
 import apiClient from "./axios";
 import { ApiResponse } from "./auth.service";
 
+export interface Subtask {
+  _id: string;
+  title: string;
+  completed: boolean;
+  dueDate?: string | null;
+  completedAt?: string | null;
+  createdAt: string;
+}
+
 export interface Task {
   _id: string;
   title: string;
@@ -10,6 +19,8 @@ export interface Task {
   dueDate?: string | null;
   category: "work" | "personal" | "study" | "health";
   logs?: { _id: string; content: string; createdAt: string }[];
+  subtasks?: Subtask[];
+  progressPercentage?: number;
   userId: string;
   isRecurring?: boolean;
   recurrenceType?: "daily" | "weekly" | "monthly" | null;
@@ -82,6 +93,38 @@ export const taskService = {
    */
   async deleteLog(taskId: string, logId: string): Promise<ApiResponse<Task>> {
     const response = await apiClient.delete<ApiResponse<Task>>(`/tasks/${taskId}/logs/${logId}`);
+    return response.data;
+  },
+
+  /**
+   * Add subtask
+   */
+  async addSubtask(taskId: string, data: { title: string; dueDate?: string | null }): Promise<ApiResponse<Task>> {
+    const response = await apiClient.post<ApiResponse<Task>>(`/tasks/${taskId}/subtasks`, data);
+    return response.data;
+  },
+
+  /**
+   * Update subtask
+   */
+  async updateSubtask(taskId: string, subtaskId: string, data: Partial<{ title: string; completed: boolean; dueDate?: string | null }>): Promise<ApiResponse<Task>> {
+    const response = await apiClient.patch<ApiResponse<Task>>(`/tasks/${taskId}/subtasks/${subtaskId}`, data);
+    return response.data;
+  },
+
+  /**
+   * Delete subtask
+   */
+  async deleteSubtask(taskId: string, subtaskId: string): Promise<ApiResponse<Task>> {
+    const response = await apiClient.delete<ApiResponse<Task>>(`/tasks/${taskId}/subtasks/${subtaskId}`);
+    return response.data;
+  },
+
+  /**
+   * Toggle completion status of a subtask
+   */
+  async toggleSubtask(taskId: string, subtaskId: string): Promise<ApiResponse<Task>> {
+    const response = await apiClient.patch<ApiResponse<Task>>(`/tasks/${taskId}/subtasks/${subtaskId}/toggle`);
     return response.data;
   },
 };

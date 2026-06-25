@@ -5,6 +5,12 @@ export interface AnalyticsOverview {
   completionRate: number;
   totalTasks: number;
   completedTasks: number;
+  totalSubtasks: number;
+  completedSubtasks: number;
+  subtaskCompletionRate: number;
+  averageTaskProgress: number;
+  mostProductiveCategory: string;
+  mostCompletedPriority: string;
   overdueTasks: number;
   weekly: {
     created: number;

@@ -353,12 +353,16 @@ export default function DashboardPage() {
       )}
 
       {/* Grid of Stat Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 select-none">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 select-none">
         {[
-          { label: "Total Tasks", val: analytics?.totalTasks || 0, icon: CheckSquare, desc: "Aggregate logged tasks" },
-          { label: "Completion Rate", val: `${analytics?.completionRate || 0}%`, icon: TrendingUp, desc: "Completed vs total logged" },
+          { label: "Tasks", val: analytics?.totalTasks || 0, icon: CheckSquare, desc: "Aggregate logged tasks" },
+          { label: "Completed Tasks", val: analytics?.completedTasks || 0, icon: CheckCircle2, desc: "Total finished tasks" },
+          { label: "Subtasks", val: analytics?.totalSubtasks || 0, icon: CheckSquare, desc: "Aggregate subtasks count" },
+          { label: "Completed Subtasks", val: analytics?.completedSubtasks || 0, icon: CheckCircle2, desc: "Finished subtasks" },
+          { label: "Task Completion Rate", val: `${analytics?.completionRate || 0}%`, icon: TrendingUp, desc: "Completed vs total tasks" },
+          { label: "Subtask Completion Rate", val: `${analytics?.subtaskCompletionRate || 0}%`, icon: TrendingUp, desc: "Completed vs total subtasks" },
           { label: "Overdue Tasks", val: analytics?.overdueTasks || 0, icon: AlertCircle, desc: "Overdue pending tasks", warn: (analytics?.overdueTasks || 0) > 0 },
-          { label: "Focus Hours", val: `${analytics?.focus.hoursThisWeek || 0}h`, icon: Clock, desc: `${analytics?.focus.sessionsCompleted || 0} focus sessions completed` },
+          { label: "Focus Hours", val: `${analytics?.focus.hoursThisWeek || 0}h`, icon: Clock, desc: `${analytics?.focus.sessionsCompleted || 0} sessions completed` },
         ].map((card, idx) => {
           const Icon = card.icon;
           return (
@@ -367,7 +371,7 @@ export default function DashboardPage() {
                 <span className="text-[10px] font-bold text-secondary-text uppercase tracking-wider">
                   {card.label}
                 </span>
-                <Icon className={`w-4 h-4 shrink-0 ${card.warn ? "text-neutral-900 font-bold" : "text-secondary-text"}`} />
+                <Icon className={`w-4 h-4 shrink-0 ${card.warn ? "text-neutral-900 font-bold animate-pulse" : "text-secondary-text"}`} />
               </div>
               <div className="mt-2 text-left">
                 <span className="text-2xl font-bold tracking-tight text-foreground">
@@ -555,10 +559,136 @@ export default function DashboardPage() {
                   </div>
                 )}
               </div>
+
+              {/* Task Progress Widget: Top progressing tasks */}
+              <div className="p-5 border border-border-custom rounded-lg bg-white shadow-sm space-y-4 text-left">
+                <div className="flex justify-between items-center border-b border-border-custom pb-2 select-none">
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4 text-secondary-text" />
+                    <h3 className="text-sm font-semibold text-foreground tracking-tight">
+                      Top Progressing Tasks
+                    </h3>
+                  </div>
+                  <span className="text-[10px] font-bold text-secondary-text uppercase">
+                    Sorted by Progress
+                  </span>
+                </div>
+                
+                {tasks.filter(t => t.subtasks && t.subtasks.length > 0).length > 0 ? (
+                  <div className="space-y-3.5 pt-1">
+                    {[...tasks]
+                      .filter(t => t.subtasks && t.subtasks.length > 0)
+                      .sort((a, b) => (b.progressPercentage ?? 0) - (a.progressPercentage ?? 0))
+                      .slice(0, 3)
+                      .map((task) => (
+                        <div key={task._id} className="space-y-1.5">
+                          <div className="flex justify-between items-center text-xs">
+                            <span className="font-bold text-foreground truncate max-w-[80%]">{task.title}</span>
+                            <span className="font-semibold text-secondary-text">{task.progressPercentage ?? 0}%</span>
+                          </div>
+                          <div className="w-full bg-neutral-100 border border-border-custom/50 rounded-full h-1.5 overflow-hidden">
+                            <div 
+                              className="bg-neutral-900 h-full rounded-full transition-all duration-300"
+                              style={{ width: `${task.progressPercentage ?? 0}%` }}
+                            />
+                          </div>
+                        </div>
+                      ))
+                    }
+                  </div>
+                ) : (
+                  <div className="text-center py-6 text-xs text-secondary-text border border-dashed border-border-custom rounded-lg bg-neutral-50 select-none animate-fadeIn">
+                    Create tasks with subtasks to track progress.
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Right Column: Deadlines & Activity Timeline */}
             <div className="space-y-6 select-none text-left">
+              {/* Overdue Subtasks Widget */}
+              {(() => {
+                const overdueSubtasks = tasks
+                  .filter(t => t.status !== "done" && t.subtasks && t.subtasks.length > 0)
+                  .flatMap(t => (t.subtasks || []).map(s => ({ ...s, parentTask: t })))
+                  .filter(s => s.dueDate && !s.completed && new Date(s.dueDate) < new Date(new Date().setHours(0,0,0,0)));
+
+                if (overdueSubtasks.length > 0) {
+                  return (
+                    <div className="p-5 border border-neutral-950 bg-neutral-950 text-white rounded-lg shadow-sm space-y-4">
+                      <div className="flex items-center gap-1.5 text-left border-b border-neutral-800 pb-2">
+                        <AlertCircle className="w-4 h-4 text-neutral-300 shrink-0" />
+                        <h3 className="text-xs font-extrabold tracking-wider text-neutral-300 uppercase leading-none">
+                          Overdue Subtasks ({overdueSubtasks.length})
+                        </h3>
+                      </div>
+                      <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
+                        {overdueSubtasks.map((sub) => (
+                          <div key={sub._id} className="text-xs text-left bg-neutral-900 border border-neutral-850 p-2.5 rounded flex justify-between items-center gap-2">
+                            <div className="min-w-0">
+                              <p className="font-semibold text-neutral-100 truncate">{sub.title}</p>
+                              <p className="text-[9px] text-neutral-400 truncate mt-0.5">Parent: {sub.parentTask.title}</p>
+                            </div>
+                            <span className="text-[9px] font-extrabold text-neutral-300 bg-neutral-850 border border-neutral-800 px-1.5 py-0.5 rounded shrink-0">
+                              {new Date(sub.dueDate!).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+
+              {/* Upcoming Subtask Deadlines Widget */}
+              <div className="p-5 border border-border-custom rounded-lg bg-white shadow-sm space-y-4">
+                <h3 className="text-xs font-bold text-foreground tracking-tight uppercase border-b border-border-custom pb-2 flex items-center gap-1.5">
+                  <Calendar className="w-4 h-4 text-secondary-text" />
+                  <span>Upcoming Subtask Deadlines</span>
+                </h3>
+
+                {(() => {
+                  const subtaskDeadlines = tasks
+                    .filter(t => t.status !== "done" && t.subtasks && t.subtasks.length > 0)
+                    .flatMap(t => (t.subtasks || []).map(s => ({ ...s, parentTask: t })))
+                    .filter(s => s.dueDate && !s.completed)
+                    .sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime())
+                    .slice(0, 4);
+
+                  if (subtaskDeadlines.length > 0) {
+                    return (
+                      <div className="flex flex-col gap-2">
+                        {subtaskDeadlines.map((sub) => {
+                          const subtaskOverdue = new Date(sub.dueDate!) < new Date(new Date().setHours(0,0,0,0));
+                          return (
+                            <div key={sub._id} className="p-2.5 border border-border-custom rounded-md bg-secondary-bg space-y-1">
+                              <div className="flex justify-between items-start gap-2">
+                                <span className="text-xs font-semibold text-foreground truncate">{sub.title}</span>
+                                {subtaskOverdue && (
+                                  <span className="text-[8px] uppercase font-bold shrink-0 px-1 border border-neutral-400 bg-neutral-250 text-neutral-900 leading-none">
+                                    Overdue
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex justify-between text-[9px] text-secondary-text">
+                                <span className="truncate max-w-[65%]">Parent: {sub.parentTask.title}</span>
+                                <span className="font-semibold">{new Date(sub.dueDate!).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  }
+                  return (
+                    <p className="text-xs text-secondary-text text-center py-2">
+                      No upcoming subtask deadlines.
+                    </p>
+                  );
+                })()}
+              </div>
+
               {/* Upcoming Deadlines Widget */}
               <div className="p-5 border border-border-custom rounded-lg bg-white shadow-sm space-y-4">
                 <h3 className="text-xs font-bold text-foreground tracking-tight uppercase border-b border-border-custom pb-2 flex items-center gap-1.5">
@@ -636,6 +766,41 @@ export default function DashboardPage() {
                   </div>
                 </div>
                 <p className="text-[10px] text-secondary-text leading-tight mt-3">Tasks compiled during current calendar month.</p>
+              </div>
+            </div>
+
+            {/* Progress Insights Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 select-none mt-4">
+              {/* Average Task Progress */}
+              <div className="p-5 border border-border-custom rounded-lg bg-white shadow-sm flex flex-col justify-between text-left min-h-[110px]">
+                <div>
+                  <span className="text-[10px] font-bold text-secondary-text uppercase tracking-wider block">AVERAGE TASK PROGRESS</span>
+                  <span className="text-2xl font-extrabold text-foreground mt-2 block">{analytics?.averageTaskProgress || 0}%</span>
+                </div>
+                <div className="w-full bg-neutral-100 border border-border-custom/50 rounded-full h-1.5 overflow-hidden mt-2">
+                  <div 
+                    className="bg-neutral-900 h-full rounded-full transition-all duration-300"
+                    style={{ width: `${analytics?.averageTaskProgress || 0}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Most Productive Category */}
+              <div className="p-5 border border-border-custom rounded-lg bg-white shadow-sm flex flex-col justify-between text-left min-h-[110px]">
+                <div>
+                  <span className="text-[10px] font-bold text-secondary-text uppercase tracking-wider block">MOST PRODUCTIVE CATEGORY</span>
+                  <span className="text-xl font-extrabold text-foreground mt-2.5 block uppercase">[{analytics?.mostProductiveCategory || "None"}]</span>
+                </div>
+                <p className="text-[9px] text-secondary-text leading-none mt-3">Highest task completion count</p>
+              </div>
+
+              {/* Most Completed Priority */}
+              <div className="p-5 border border-border-custom rounded-lg bg-white shadow-sm flex flex-col justify-between text-left min-h-[110px]">
+                <div>
+                  <span className="text-[10px] font-bold text-secondary-text uppercase tracking-wider block">MOST COMPLETED PRIORITY</span>
+                  <span className="text-xl font-extrabold text-foreground mt-2.5 block uppercase">{analytics?.mostCompletedPriority || "None"}</span>
+                </div>
+                <p className="text-[9px] text-secondary-text leading-none mt-3">Priority level completed most</p>
               </div>
             </div>
 

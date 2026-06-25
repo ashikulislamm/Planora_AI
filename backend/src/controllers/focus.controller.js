@@ -8,7 +8,7 @@ import ApiError from '../utils/ApiError.js';
  */
 export const startSession = asyncHandler(async (req, res) => {
   const userId = req.user._id;
-  const { taskId, duration } = req.body;
+  const { taskId, duration, subtaskId } = req.body;
 
   if (!taskId) {
     throw new ApiError(400, 'Task ID is required');
@@ -17,7 +17,7 @@ export const startSession = asyncHandler(async (req, res) => {
     throw new ApiError(400, 'Duration must be a positive number');
   }
 
-  const session = await focusService.startSession(userId, taskId, Number(duration));
+  const session = await focusService.startSession(userId, taskId, Number(duration), subtaskId);
   res.status(201).json(new ApiResponse(201, 'Focus session started successfully', session));
 });
 
