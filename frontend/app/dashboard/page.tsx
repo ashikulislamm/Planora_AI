@@ -304,6 +304,19 @@ export default function DashboardPage() {
     return `${displayHours}:${displayMinutes} ${ampm}`;
   };
 
+  const getStatusStyle = (status: "todo" | "in-progress" | "done") => {
+    switch (status) {
+      case "todo":
+        return "border-slate-350 text-slate-700 bg-slate-100";
+      case "in-progress":
+        return "border-violet-300 text-violet-750 bg-violet-50 font-semibold";
+      case "done":
+        return "border-emerald-350 text-emerald-800 bg-emerald-50 font-bold";
+      default:
+        return "border-slate-350 text-slate-700 bg-slate-100";
+    }
+  };
+
   // Pending tasks filter
   const dashboardPendingTasks = tasks
     .filter((t) => t.status === "todo" || t.status === "in-progress")
@@ -366,14 +379,14 @@ export default function DashboardPage() {
 
       {/* Active Focus Session Widget Banner */}
       {activeFocus && (
-        <div className="p-4 border border-neutral-900 bg-neutral-900 text-white rounded-lg shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 select-none">
-          <div className="space-y-1 text-left">
+        <div className="p-4.5 border border-neutral-950 bg-neutral-950 text-white rounded-xl shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 select-none">
+          <div className="space-y-1.5 text-left">
             <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-widest block leading-none">FOCUS MODE ACTIVE</span>
             <h3 className="text-xs font-bold truncate leading-tight">Currently focusing on: "{activeFocus.taskId.title}"</h3>
             <p className="text-[10px] text-neutral-300 leading-none">Your timer session is still active. Return to prevent cancellation.</p>
           </div>
           <Link href="/dashboard/focus" className="shrink-0">
-            <Button variant="outline" size="sm" className="bg-white text-neutral-900 border-none font-bold hover:bg-neutral-100 py-1.5">
+            <Button variant="outline" size="sm" className="bg-white text-neutral-950 border-none font-bold hover:bg-neutral-100 py-1.5">
               Resume Focus Session
             </Button>
           </Link>
@@ -381,31 +394,28 @@ export default function DashboardPage() {
       )}
 
       {/* Grid of Stat Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 select-none">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 select-none">
         {[
           { label: "Tasks", val: analytics?.totalTasks || 0, icon: CheckSquare, desc: "Aggregate logged tasks" },
           { label: "Completed Tasks", val: analytics?.completedTasks || 0, icon: CheckCircle2, desc: "Total finished tasks" },
-          { label: "Subtasks", val: analytics?.totalSubtasks || 0, icon: CheckSquare, desc: "Aggregate subtasks count" },
-          { label: "Completed Subtasks", val: analytics?.completedSubtasks || 0, icon: CheckCircle2, desc: "Finished subtasks" },
           { label: "Task Completion Rate", val: `${analytics?.completionRate || 0}%`, icon: TrendingUp, desc: "Completed vs total tasks" },
-          { label: "Subtask Completion Rate", val: `${analytics?.subtaskCompletionRate || 0}%`, icon: TrendingUp, desc: "Completed vs total subtasks" },
           { label: "Overdue Tasks", val: analytics?.overdueTasks || 0, icon: AlertCircle, desc: "Overdue pending tasks", warn: (analytics?.overdueTasks || 0) > 0 },
           { label: "Focus Hours", val: `${analytics?.focus.hoursThisWeek || 0}h`, icon: Clock, desc: `${analytics?.focus.sessionsCompleted || 0} sessions completed` },
         ].map((card, idx) => {
           const Icon = card.icon;
           return (
-            <div key={idx} className="p-4 bg-white border border-border-custom rounded-lg shadow-sm flex flex-col justify-between min-h-[105px]">
+            <div key={idx} className="p-4 bg-white border border-border-custom rounded-xl hover:border-neutral-350 transition-all duration-200 shadow-3xs flex flex-col justify-between min-h-[105px]">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold text-secondary-text uppercase tracking-wider">
+                <span className="text-[9px] font-bold text-secondary-text uppercase tracking-wider">
                   {card.label}
                 </span>
-                <Icon className={`w-4 h-4 shrink-0 ${card.warn ? "text-neutral-900 font-bold animate-pulse" : "text-secondary-text"}`} />
+                <Icon className={`w-3.5 h-3.5 shrink-0 ${card.warn ? "text-neutral-950 font-bold animate-pulse" : "text-secondary-text"}`} />
               </div>
-              <div className="mt-2 text-left">
+              <div className="mt-2.5 text-left">
                 <span className="text-2xl font-bold tracking-tight text-foreground">
                   {card.val}
                 </span>
-                <p className="text-[10px] text-secondary-text mt-1.5 leading-none">
+                <p className="text-[10px] text-secondary-text mt-1.5 leading-none font-medium">
                   {card.desc}
                 </p>
               </div>
@@ -415,7 +425,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Dashboard Section Switcher tabs */}
-      <div className="flex bg-neutral-100 p-0.5 rounded-lg text-xs font-semibold text-secondary-text w-full sm:w-auto overflow-x-auto select-none border border-border-custom">
+      <div className="flex bg-secondary-bg p-0.5 rounded-lg text-xs font-bold text-secondary-text w-full sm:w-auto overflow-x-auto select-none border border-border-custom gap-0.5">
         {[
           { id: "overview", label: "Workspace Overview" },
           { id: "analytics", label: "Productivity Insights" }
@@ -424,10 +434,10 @@ export default function DashboardPage() {
             key={tab.id}
             onClick={() => setDashboardTab(tab.id as any)}
             className={`
-              px-4 py-2 rounded-md transition uppercase leading-none text-[10px] tracking-wider whitespace-nowrap shrink-0 cursor-pointer
+              px-3.5 py-1.5 rounded-md transition-all duration-200 uppercase leading-none text-[9px] tracking-wider whitespace-nowrap shrink-0 cursor-pointer
               ${dashboardTab === tab.id 
-                ? "bg-white border border-border-custom text-foreground shadow-xs font-bold" 
-                : "hover:text-foreground hover:bg-hover-custom/50"
+                ? "bg-white border border-border-custom text-foreground shadow-3xs font-extrabold" 
+                : "hover:text-foreground hover:bg-hover-custom/60"
               }
             `}
           >
@@ -450,15 +460,15 @@ export default function DashboardPage() {
             {/* Left Column: Pending Tasks List */}
             <div className="lg:col-span-2 space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-border-custom pb-2 gap-2 select-none">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 text-left">
                   <Clock className="w-4 h-4 text-secondary-text" />
-                  <h3 className="text-sm font-semibold text-foreground tracking-tight">
+                  <h3 className="text-xs sm:text-sm font-bold text-foreground tracking-tight">
                     Pending Actions ({dashboardPendingTasks.length})
                   </h3>
                 </div>
                 
                 {/* Category Filter Pills */}
-                <div className="flex bg-neutral-100 border border-border-custom p-0.5 rounded-md text-lg font-semibold text-secondary-text w-full sm:w-auto overflow-x-auto">
+                <div className="flex bg-secondary-bg border border-border-custom p-0.5 rounded-md text-secondary-text w-full sm:w-auto overflow-x-auto gap-0.5">
                   {[
                     { id: "all", label: "All" },
                     { id: "work", label: "Work" },
@@ -470,10 +480,10 @@ export default function DashboardPage() {
                       key={pill.id}
                       onClick={() => setDashboardCategoryFilter(pill.id as any)}
                       className={`
-                        px-3 py-1 rounded transition uppercase leading-none text-[11px] tracking-tight whitespace-nowrap shrink-0 cursor-pointer
+                        px-2.5 py-1 rounded transition-all duration-200 uppercase leading-none text-[10px] tracking-tight whitespace-nowrap shrink-0 cursor-pointer font-bold
                         ${dashboardCategoryFilter === pill.id 
-                          ? "bg-white border border-border-custom text-foreground shadow-xs font-bold" 
-                          : "hover:text-foreground hover:bg-hover-custom"
+                          ? "bg-white border border-border-custom text-foreground shadow-3xs font-extrabold" 
+                          : "hover:text-foreground hover:bg-hover-custom/60"
                         }
                       `}
                     >
@@ -497,45 +507,49 @@ export default function DashboardPage() {
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, scale: 0.95 }}
                           transition={{ duration: 0.2 }}
-                          className="p-4 bg-white border border-border-custom rounded-lg shadow-xs hover:border-foreground/45 transition flex items-center justify-between gap-4 group"
+                           className={`p-4 rounded-xl transition-all duration-200 flex items-center justify-between gap-4 group border hover:border-neutral-400 hover:shadow-3xs
+                            ${overdue 
+                              ? "bg-gradient-to-r from-red-50/20 to-white border-red-250" 
+                              : "bg-white border-border-custom"}`}
                         >
                           <div className="flex items-start gap-3 min-w-0 text-left">
                             <button
                               onClick={() => handleQuickStatusChange(task, "done")}
-                              className="text-secondary-text hover:text-foreground shrink-0 mt-0.5 transition cursor-pointer"
+                              className="text-secondary-text hover:text-foreground shrink-0 mt-0.5 transition-all duration-150 active:scale-90 cursor-pointer"
                               aria-label="Mark completed"
                             >
                               <Circle className="w-4.5 h-4.5" />
                             </button>
                             
                             <div className="min-w-0">
-                              <div className="flex items-center gap-1.5 flex-wrap">
+                              <div className="flex items-center gap-2 flex-wrap">
                                 <h4 className="text-xs font-bold tracking-tight text-foreground truncate">
                                   {task.title}
                                 </h4>
-                                <span className="text-[9px] text-secondary-text font-bold uppercase">
+                                <span className="text-[9px] text-secondary-text font-bold uppercase tracking-wider">
                                   [{task.category}]
                                 </span>
                                 {task.isRecurring && (
-                                  <span className="inline-flex items-center gap-0.5 border border-neutral-350 bg-neutral-100 text-neutral-850 px-1 py-0.5 rounded text-[8px] font-extrabold uppercase">
+                                  <span className="inline-flex items-center gap-0.5 border border-border-custom bg-secondary-bg text-secondary-text px-1.5 py-0.5 rounded text-[8px] font-bold uppercase shadow-3xs">
                                     <span>Repeats {task.recurrenceType}</span>
                                   </span>
                                 )}
                                 {overdue && (
-                                  <span className="inline-flex items-center gap-0.5 border border-neutral-400 bg-neutral-100 text-neutral-900 px-1 py-0.5 rounded text-[8px] font-extrabold uppercase animate-pulse">
+                                  <span className="inline-flex items-center gap-0.5 border border-red-250 bg-red-50 text-red-700 px-1.5 py-0.5 rounded text-[8px] font-bold uppercase animate-pulse shadow-sm shadow-red-100">
+                                    <AlertCircle className="w-2 h-2 text-red-650" />
                                     <span>Overdue</span>
                                   </span>
                                 )}
                               </div>
-                              <p className="text-xs text-secondary-text leading-normal mt-1 line-clamp-1">
+                              <p className="text-xs text-secondary-text leading-normal mt-1.5 line-clamp-1 font-medium">
                                 {task.description}
                               </p>
-                              <div className="flex items-center gap-2 mt-2.5 select-none text-[10px]">
-                                <span className="text-[9px] text-secondary-text font-bold uppercase border border-border-custom bg-secondary-bg px-1.5 py-0.5 rounded leading-none shrink-0">
+                              <div className="flex items-center gap-2.5 mt-2.5 select-none text-[10px]">
+                                <span className={`text-[9px] font-bold uppercase border px-1.5 py-0.5 rounded leading-none shrink-0 shadow-3xs ${getStatusStyle(task.status)}`}>
                                   {task.status}
                                 </span>
                                 {task.dueDate && (
-                                  <span className={`text-[10px] font-semibold leading-none shrink-0 ${overdue ? "text-neutral-900 font-bold animate-pulse" : "text-secondary-text"}`}>
+                                  <span className={`text-[10px] font-bold leading-none shrink-0 ${overdue ? "text-red-600 font-extrabold animate-pulse" : "text-secondary-text"}`}>
                                     Due: {new Date(task.dueDate).toLocaleDateString(undefined, { month: "short", day: "numeric" })}{task.dueTime ? ` at ${formatDueTime(task.dueTime)}` : ""}
                                   </span>
                                 )}
@@ -543,7 +557,7 @@ export default function DashboardPage() {
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-1.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="flex items-center gap-1.5 shrink-0 opacity-0 group-hover:opacity-100 transition-all duration-200">
                             <button
                               onClick={() => setEditingTask(task)}
                               className="text-secondary-text hover:text-foreground p-1 hover:bg-hover-custom rounded transition cursor-pointer"
@@ -634,89 +648,6 @@ export default function DashboardPage() {
 
             {/* Right Column: Deadlines & Activity Timeline */}
             <div className="space-y-6 select-none text-left">
-              {/* Overdue Subtasks Widget */}
-              {(() => {
-                const overdueSubtasks = tasks
-                  .filter(t => t.status !== "done" && t.subtasks && t.subtasks.length > 0)
-                  .flatMap(t => (t.subtasks || []).map(s => ({ ...s, parentTask: t })))
-                  .filter(s => s.dueDate && !s.completed && new Date(s.dueDate) < new Date(new Date().setHours(0,0,0,0)));
-
-                if (overdueSubtasks.length > 0) {
-                  return (
-                    <div className="p-5 border border-neutral-950 bg-neutral-950 text-white rounded-lg shadow-sm space-y-4">
-                      <div className="flex items-center gap-1.5 text-left border-b border-neutral-800 pb-2">
-                        <AlertCircle className="w-4 h-4 text-neutral-300 shrink-0" />
-                        <h3 className="text-xs font-extrabold tracking-wider text-neutral-300 uppercase leading-none">
-                          Overdue Subtasks ({overdueSubtasks.length})
-                        </h3>
-                      </div>
-                      <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
-                        {overdueSubtasks.map((sub) => (
-                          <div key={sub._id} className="text-xs text-left bg-neutral-900 border border-neutral-850 p-2.5 rounded flex justify-between items-center gap-2">
-                            <div className="min-w-0">
-                              <p className="font-semibold text-neutral-100 truncate">{sub.title}</p>
-                              <p className="text-[9px] text-neutral-400 truncate mt-0.5">Parent: {sub.parentTask.title}</p>
-                            </div>
-                            <span className="text-[9px] font-extrabold text-neutral-300 bg-neutral-850 border border-neutral-800 px-1.5 py-0.5 rounded shrink-0">
-                              {new Date(sub.dueDate!).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                }
-                return null;
-              })()}
-
-              {/* Upcoming Subtask Deadlines Widget */}
-              <div className="p-5 border border-border-custom rounded-lg bg-white shadow-sm space-y-4">
-                <h3 className="text-xs font-bold text-foreground tracking-tight uppercase border-b border-border-custom pb-2 flex items-center gap-1.5">
-                  <Calendar className="w-4 h-4 text-secondary-text" />
-                  <span>Upcoming Subtask Deadlines</span>
-                </h3>
-
-                {(() => {
-                  const subtaskDeadlines = tasks
-                    .filter(t => t.status !== "done" && t.subtasks && t.subtasks.length > 0)
-                    .flatMap(t => (t.subtasks || []).map(s => ({ ...s, parentTask: t })))
-                    .filter(s => s.dueDate && !s.completed)
-                    .sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime())
-                    .slice(0, 4);
-
-                  if (subtaskDeadlines.length > 0) {
-                    return (
-                      <div className="flex flex-col gap-2">
-                        {subtaskDeadlines.map((sub) => {
-                          const subtaskOverdue = new Date(sub.dueDate!) < new Date(new Date().setHours(0,0,0,0));
-                          return (
-                            <div key={sub._id} className="p-2.5 border border-border-custom rounded-md bg-secondary-bg space-y-1">
-                              <div className="flex justify-between items-start gap-2">
-                                <span className="text-xs font-semibold text-foreground truncate">{sub.title}</span>
-                                {subtaskOverdue && (
-                                  <span className="text-[8px] uppercase font-bold shrink-0 px-1 border border-neutral-400 bg-neutral-250 text-neutral-900 leading-none">
-                                    Overdue
-                                  </span>
-                                )}
-                              </div>
-                              <div className="flex justify-between text-[9px] text-secondary-text">
-                                <span className="truncate max-w-[65%]">Parent: {sub.parentTask.title}</span>
-                                <span className="font-semibold">{new Date(sub.dueDate!).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</span>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    );
-                  }
-                  return (
-                    <p className="text-xs text-secondary-text text-center py-2">
-                      No upcoming subtask deadlines.
-                    </p>
-                  );
-                })()}
-              </div>
-
               {/* Upcoming Deadlines Widget */}
               <div className="p-5 border border-border-custom rounded-lg bg-white shadow-sm space-y-4">
                 <h3 className="text-xs font-bold text-foreground tracking-tight uppercase border-b border-border-custom pb-2 flex items-center gap-1.5">
@@ -749,6 +680,46 @@ export default function DashboardPage() {
                     No upcoming deadlines.
                   </p>
                 )}
+              </div>
+
+              {/* Missed / Overdue Tasks Widget */}
+              <div className="p-5 border border-border-custom rounded-lg bg-white shadow-sm space-y-4">
+                <h3 className="text-xs font-bold text-foreground tracking-tight uppercase border-b border-border-custom pb-2 flex items-center gap-1.5">
+                  <AlertCircle className="w-4 h-4 text-secondary-text" />
+                  <span>Missed / Overdue Tasks</span>
+                </h3>
+
+                {(() => {
+                  const overdueTasksList = tasks
+                    .filter((t) => isTaskOverdue(t))
+                    .sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime());
+
+                  if (overdueTasksList.length > 0) {
+                    return (
+                      <div className="flex flex-col gap-2">
+                        {overdueTasksList.map((task) => (
+                          <div key={task._id} className="p-2.5 border border-red-200 rounded-md bg-red-50/20 space-y-1.5">
+                            <div className="flex justify-between items-start gap-2">
+                              <span className="text-xs font-semibold text-foreground truncate">{task.title}</span>
+                              <span className="text-[9px] uppercase font-bold shrink-0 px-1.5 py-0.5 border border-red-200 bg-white text-red-700 animate-pulse shadow-sm shadow-red-100">
+                                Overdue
+                              </span>
+                            </div>
+                            <div className="flex justify-between text-[10px] text-secondary-text">
+                              <span>{task.category}</span>
+                              <span className="font-semibold text-red-650 font-bold">{new Date(task.dueDate!).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  }
+                  return (
+                    <p className="text-xs text-secondary-text text-center py-2">
+                      No missed or overdue tasks.
+                    </p>
+                  );
+                })()}
               </div>
 
               {/* Activity Timeline Widget */}
@@ -836,8 +807,8 @@ export default function DashboardPage() {
             {isMounted && (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 select-none">
                 {/* 7 Days Trend Chart */}
-                <div className="p-5 border border-border-custom rounded-lg bg-white shadow-sm space-y-4 text-left">
-                  <h4 className="text-xs font-bold text-foreground tracking-tight uppercase border-b border-border-custom pb-2">
+                <div className="p-5 border border-border-custom rounded-xl bg-white shadow-3xs space-y-4 text-left hover:border-neutral-350 transition-all duration-200">
+                  <h4 className="text-[10px] font-bold text-secondary-text tracking-wider uppercase border-b border-border-custom pb-2">
                     Weekly Productivity Trend (Last 7 Days)
                   </h4>
                   <div className="h-64 w-full">
@@ -845,29 +816,29 @@ export default function DashboardPage() {
                       <AreaChart data={analytics?.weeklyTrend || []} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
                         <defs>
                           <linearGradient id="colorCreated" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#666666" stopOpacity={0.1}/>
-                            <stop offset="95%" stopColor="#666666" stopOpacity={0}/>
+                            <stop offset="5%" stopColor="#71717a" stopOpacity={0.1}/>
+                            <stop offset="95%" stopColor="#71717a" stopOpacity={0}/>
                           </linearGradient>
                           <linearGradient id="colorCompleted" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#111111" stopOpacity={0.2}/>
-                            <stop offset="95%" stopColor="#111111" stopOpacity={0}/>
+                            <stop offset="5%" stopColor="#09090b" stopOpacity={0.2}/>
+                            <stop offset="95%" stopColor="#09090b" stopOpacity={0}/>
                           </linearGradient>
                         </defs>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                        <XAxis dataKey="date" tickLine={false} axisLine={false} style={{ fontSize: 10, fill: "#666" }} />
-                        <YAxis tickLine={false} axisLine={false} style={{ fontSize: 10, fill: "#666" }} />
-                        <Tooltip contentStyle={{ fontSize: 11, borderRadius: 8, borderColor: "#e5e5e5" }} />
-                        <Legend wrapperStyle={{ fontSize: 10, paddingTop: 10 }} />
-                        <Area type="monotone" name="Created Tasks" dataKey="created" stroke="#666666" strokeWidth={2} fillOpacity={1} fill="url(#colorCreated)" />
-                        <Area type="monotone" name="Completed Tasks" dataKey="completed" stroke="#111111" strokeWidth={2} fillOpacity={1} fill="url(#colorCompleted)" />
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f4f4f5" />
+                        <XAxis dataKey="date" tickLine={false} axisLine={false} style={{ fontSize: 10, fill: "var(--color-secondary-text)", fontWeight: 500 }} />
+                        <YAxis tickLine={false} axisLine={false} style={{ fontSize: 10, fill: "var(--color-secondary-text)", fontWeight: 500 }} />
+                        <Tooltip contentStyle={{ fontSize: 11, borderRadius: 8, borderColor: "var(--color-border-custom)", backgroundColor: "#ffffff", boxShadow: "0 4px 12px rgba(0, 0, 0, 0.04)", fontWeight: 500 }} />
+                        <Legend wrapperStyle={{ fontSize: 10, paddingTop: 10, fontWeight: 650 }} />
+                        <Area type="monotone" name="Created Tasks" dataKey="created" stroke="#71717a" strokeWidth={2} fillOpacity={1} fill="url(#colorCreated)" />
+                        <Area type="monotone" name="Completed Tasks" dataKey="completed" stroke="#09090b" strokeWidth={2} fillOpacity={1} fill="url(#colorCompleted)" />
                       </AreaChart>
                     </ResponsiveContainer>
                   </div>
                 </div>
 
                 {/* 30 Days Trend Chart */}
-                <div className="p-5 border border-border-custom rounded-lg bg-white shadow-sm space-y-4 text-left">
-                  <h4 className="text-xs font-bold text-foreground tracking-tight uppercase border-b border-border-custom pb-2">
+                <div className="p-5 border border-border-custom rounded-xl bg-white shadow-3xs space-y-4 text-left hover:border-neutral-350 transition-all duration-200">
+                  <h4 className="text-[10px] font-bold text-secondary-text tracking-wider uppercase border-b border-border-custom pb-2">
                     Monthly Productivity Trend (Last 30 Days)
                   </h4>
                   <div className="h-64 w-full">
@@ -875,29 +846,29 @@ export default function DashboardPage() {
                       <AreaChart data={analytics?.monthlyTrend || []} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
                         <defs>
                           <linearGradient id="colorCreatedM" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#666666" stopOpacity={0.1}/>
-                            <stop offset="95%" stopColor="#666666" stopOpacity={0}/>
+                            <stop offset="5%" stopColor="#71717a" stopOpacity={0.1}/>
+                            <stop offset="95%" stopColor="#71717a" stopOpacity={0}/>
                           </linearGradient>
                           <linearGradient id="colorCompletedM" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#111111" stopOpacity={0.2}/>
-                            <stop offset="95%" stopColor="#111111" stopOpacity={0}/>
+                            <stop offset="5%" stopColor="#09090b" stopOpacity={0.2}/>
+                            <stop offset="95%" stopColor="#09090b" stopOpacity={0}/>
                           </linearGradient>
                         </defs>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                        <XAxis dataKey="date" tickLine={false} axisLine={false} style={{ fontSize: 10, fill: "#666" }} />
-                        <YAxis tickLine={false} axisLine={false} style={{ fontSize: 10, fill: "#666" }} />
-                        <Tooltip contentStyle={{ fontSize: 11, borderRadius: 8, borderColor: "#e5e5e5" }} />
-                        <Legend wrapperStyle={{ fontSize: 10, paddingTop: 10 }} />
-                        <Area type="monotone" name="Created Tasks" dataKey="created" stroke="#666666" strokeWidth={2} fillOpacity={1} fill="url(#colorCreatedM)" />
-                        <Area type="monotone" name="Completed Tasks" dataKey="completed" stroke="#111111" strokeWidth={2} fillOpacity={1} fill="url(#colorCompletedM)" />
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f4f4f5" />
+                        <XAxis dataKey="date" tickLine={false} axisLine={false} style={{ fontSize: 10, fill: "var(--color-secondary-text)", fontWeight: 500 }} />
+                        <YAxis tickLine={false} axisLine={false} style={{ fontSize: 10, fill: "var(--color-secondary-text)", fontWeight: 500 }} />
+                        <Tooltip contentStyle={{ fontSize: 11, borderRadius: 8, borderColor: "var(--color-border-custom)", backgroundColor: "#ffffff", boxShadow: "0 4px 12px rgba(0, 0, 0, 0.04)", fontWeight: 500 }} />
+                        <Legend wrapperStyle={{ fontSize: 10, paddingTop: 10, fontWeight: 650 }} />
+                        <Area type="monotone" name="Created Tasks" dataKey="created" stroke="#71717a" strokeWidth={2} fillOpacity={1} fill="url(#colorCreatedM)" />
+                        <Area type="monotone" name="Completed Tasks" dataKey="completed" stroke="#09090b" strokeWidth={2} fillOpacity={1} fill="url(#colorCompletedM)" />
                       </AreaChart>
                     </ResponsiveContainer>
                   </div>
                 </div>
 
                 {/* Status Distribution Pie Chart */}
-                <div className="p-5 border border-border-custom rounded-lg bg-white shadow-sm space-y-4 text-left">
-                  <h4 className="text-xs font-bold text-foreground tracking-tight uppercase border-b border-border-custom pb-2">
+                <div className="p-5 border border-border-custom rounded-xl bg-white shadow-3xs space-y-4 text-left hover:border-neutral-350 transition-all duration-200">
+                  <h4 className="text-[10px] font-bold text-secondary-text tracking-wider uppercase border-b border-border-custom pb-2">
                     Status Distribution
                   </h4>
                   <div className="h-64 w-full flex items-center justify-center">
@@ -916,28 +887,28 @@ export default function DashboardPage() {
                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                           ))}
                         </Pie>
-                        <Tooltip formatter={(value) => [`${value} tasks`]} contentStyle={{ fontSize: 11, borderRadius: 8, borderColor: "#e5e5e5" }} />
-                        <Legend wrapperStyle={{ fontSize: 10 }} />
+                        <Tooltip formatter={(value) => [`${value} tasks`]} contentStyle={{ fontSize: 11, borderRadius: 8, borderColor: "var(--color-border-custom)", backgroundColor: "#ffffff", boxShadow: "0 4px 12px rgba(0, 0, 0, 0.04)", fontWeight: 500 }} />
+                        <Legend wrapperStyle={{ fontSize: 10, fontWeight: 650 }} />
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
                 </div>
 
                 {/* Priority Distribution Bar Chart */}
-                <div className="p-5 border border-border-custom rounded-lg bg-white shadow-sm space-y-4 text-left">
-                  <h4 className="text-xs font-bold text-foreground tracking-tight uppercase border-b border-border-custom pb-2">
+                <div className="p-5 border border-border-custom rounded-xl bg-white shadow-3xs space-y-4 text-left hover:border-neutral-350 transition-all duration-200">
+                  <h4 className="text-[10px] font-bold text-secondary-text tracking-wider uppercase border-b border-border-custom pb-2">
                     Priority Distribution
                   </h4>
                   <div className="h-64 w-full">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={priorityData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                        <XAxis dataKey="name" tickLine={false} axisLine={false} style={{ fontSize: 10, fill: "#666" }} />
-                        <YAxis tickLine={false} axisLine={false} style={{ fontSize: 10, fill: "#666" }} />
-                        <Tooltip cursor={{ fill: "transparent" }} contentStyle={{ fontSize: 11, borderRadius: 8, borderColor: "#e5e5e5" }} />
-                        <Bar dataKey="count" fill="#111111" radius={[4, 4, 0, 0]} maxBarSize={45}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f4f4f5" />
+                        <XAxis dataKey="name" tickLine={false} axisLine={false} style={{ fontSize: 10, fill: "var(--color-secondary-text)", fontWeight: 500 }} />
+                        <YAxis tickLine={false} axisLine={false} style={{ fontSize: 10, fill: "var(--color-secondary-text)", fontWeight: 500 }} />
+                        <Tooltip cursor={{ fill: "transparent" }} contentStyle={{ fontSize: 11, borderRadius: 8, borderColor: "var(--color-border-custom)", backgroundColor: "#ffffff", boxShadow: "0 4px 12px rgba(0, 0, 0, 0.04)", fontWeight: 500 }} />
+                        <Bar dataKey="count" fill="#09090b" radius={[4, 4, 0, 0]} maxBarSize={45}>
                           {priorityData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.name === "Critical" ? "#111111" : "#666666"} />
+                            <Cell key={`cell-${index}`} fill={entry.name === "Critical" ? "#09090b" : "#71717a"} />
                           ))}
                         </Bar>
                       </BarChart>
@@ -967,7 +938,7 @@ export default function DashboardPage() {
           />
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-foreground tracking-tight select-none">
+            <label className="text-[10px] font-bold text-secondary-text uppercase tracking-wider select-none text-left">
               Description
             </label>
             <textarea
@@ -975,16 +946,16 @@ export default function DashboardPage() {
               placeholder="Provide context or instructions for this task..."
               disabled={createTaskMutation.isPending}
               className={`
-                w-full px-3 py-2 text-sm bg-white border border-border-custom rounded-md 
-                placeholder-secondary-text text-foreground outline-none transition
-                focus:border-foreground focus:ring-1 focus:ring-foreground
+                w-full px-3 py-2 text-xs sm:text-sm bg-white border border-border-custom rounded-md 
+                placeholder-neutral-400 font-normal text-foreground outline-none transition-all duration-200
+                hover:border-neutral-350 focus:border-foreground focus:ring-4 focus:ring-black/5
                 disabled:bg-secondary-bg disabled:text-secondary-text disabled:cursor-not-allowed
-                ${createErrors.description?.message ? "border-foreground ring-1 ring-foreground" : ""}
+                ${createErrors.description?.message ? "border-foreground ring-4 ring-black/5 font-semibold" : ""}
               `}
               {...registerCreate("description")}
             />
             {createErrors.description?.message && (
-              <span className="text-xs text-foreground font-medium mt-0.5 block">
+              <span className="text-[11px] text-foreground font-bold tracking-tight mt-1 text-left">
                 {createErrors.description.message}
               </span>
             )}
@@ -992,15 +963,15 @@ export default function DashboardPage() {
 
           <div className="grid grid-cols-2 gap-3.5">
             <div className="flex flex-col gap-1.5 select-none">
-              <label className="text-xs font-semibold text-foreground tracking-tight">
+              <label className="text-[10px] font-bold text-secondary-text uppercase tracking-wider select-none text-left">
                 Category
               </label>
               <select
                 disabled={createTaskMutation.isPending}
                 className="
-                  w-full px-3 py-2 text-sm bg-white border border-border-custom rounded-md 
-                  text-foreground outline-none cursor-pointer transition uppercase font-semibold
-                  focus:border-foreground focus:ring-1 focus:ring-foreground
+                  w-full px-3 py-2 text-xs sm:text-sm bg-white border border-border-custom rounded-md 
+                  text-foreground outline-none cursor-pointer transition-all duration-200 uppercase font-semibold
+                  hover:border-neutral-350 focus:border-foreground focus:ring-4 focus:ring-black/5
                 "
                 {...registerCreate("category")}
               >
@@ -1012,15 +983,15 @@ export default function DashboardPage() {
             </div>
 
             <div className="flex flex-col gap-1.5 select-none">
-              <label className="text-xs font-semibold text-foreground tracking-tight">
+              <label className="text-[10px] font-bold text-secondary-text uppercase tracking-wider select-none text-left">
                 Priority
               </label>
               <select
                 disabled={createTaskMutation.isPending}
                 className="
-                  w-full px-3 py-2 text-sm bg-white border border-border-custom rounded-md 
-                  text-foreground outline-none cursor-pointer transition uppercase font-semibold
-                  focus:border-foreground focus:ring-1 focus:ring-foreground
+                  w-full px-3 py-2 text-xs sm:text-sm bg-white border border-border-custom rounded-md 
+                  text-foreground outline-none cursor-pointer transition-all duration-200 uppercase font-semibold
+                  hover:border-neutral-350 focus:border-foreground focus:ring-4 focus:ring-black/5
                 "
                 {...registerCreate("priority")}
               >

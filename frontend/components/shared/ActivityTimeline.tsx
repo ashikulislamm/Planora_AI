@@ -75,7 +75,7 @@ export default function ActivityTimeline({ activities }: ActivityTimelineProps) 
       case "task_created":
         return {
           icon: PlusCircle,
-          color: "text-neutral-900 border-neutral-900 bg-neutral-50",
+          color: "text-foreground border-border-custom bg-secondary-bg",
           text: (act: Activity) => {
             const isRecurrence = act.metadata?.isRecurrence;
             const taskTitle = act.metadata?.title || act.taskId?.title || "Unnamed Task";
@@ -87,13 +87,13 @@ export default function ActivityTimeline({ activities }: ActivityTimelineProps) 
       case "task_updated":
         return {
           icon: Edit3,
-          color: "text-neutral-500 border-neutral-200 bg-neutral-50",
+          color: "text-secondary-text border-border-custom bg-secondary-bg",
           text: (act: Activity) => `Updated task: "${act.metadata?.title || act.taskId?.title || "Task"}"`
         };
       case "status_changed":
         return {
           icon: CheckCircle,
-          color: "text-neutral-900 border-neutral-900 bg-neutral-50",
+          color: "text-foreground border-border-custom bg-secondary-bg",
           text: (act: Activity) => {
             const title = act.metadata?.title || act.taskId?.title || "Task";
             const newStatus = act.metadata?.newStatus || "done";
@@ -103,7 +103,7 @@ export default function ActivityTimeline({ activities }: ActivityTimelineProps) 
       case "priority_changed":
         return {
           icon: AlertCircle,
-          color: "text-neutral-800 border-neutral-300 bg-neutral-50",
+          color: "text-foreground border-border-custom bg-secondary-bg",
           text: (act: Activity) => {
             const title = act.metadata?.title || act.taskId?.title || "Task";
             const priority = act.metadata?.newPriority || "medium";
@@ -113,7 +113,7 @@ export default function ActivityTimeline({ activities }: ActivityTimelineProps) 
       case "due_date_changed":
         return {
           icon: Calendar,
-          color: "text-neutral-500 border-neutral-200 bg-neutral-50",
+          color: "text-secondary-text border-border-custom bg-secondary-bg",
           text: (act: Activity) => {
             const title = act.metadata?.title || act.taskId?.title || "Task";
             const due = act.metadata?.newDueDate ? new Date(act.metadata.newDueDate).toLocaleDateString() : "No Date";
@@ -123,55 +123,55 @@ export default function ActivityTimeline({ activities }: ActivityTimelineProps) 
       case "log_added":
         return {
           icon: MessageSquare,
-          color: "text-neutral-500 border-neutral-200 bg-neutral-50",
+          color: "text-secondary-text border-border-custom bg-secondary-bg",
           text: (act: Activity) => `Added progress log to "${act.metadata?.title || act.taskId?.title || "Task"}"`
         };
       case "log_deleted":
         return {
           icon: Trash2,
-          color: "text-neutral-500 border-neutral-200 bg-neutral-50",
+          color: "text-secondary-text border-border-custom bg-secondary-bg",
           text: (act: Activity) => `Deleted progress log from "${act.metadata?.title || act.taskId?.title || "Task"}"`
         };
       case "task_deleted":
         return {
           icon: Trash2,
-          color: "text-neutral-800 border-neutral-300 bg-neutral-50",
+          color: "text-foreground border-border-custom bg-secondary-bg",
           text: (act: Activity) => `Deleted task: "${act.metadata?.title || "Task"}"`
         };
       case "subtask_created":
         return {
           icon: PlusCircle,
-          color: "text-neutral-900 border-neutral-900 bg-neutral-50",
+          color: "text-foreground border-border-custom bg-secondary-bg",
           text: (act: Activity) => `Created subtask: "${act.metadata?.subtaskTitle}" (Parent: "${act.metadata?.taskTitle || act.taskId?.title || "Task"}")`
         };
       case "subtask_completed":
         return {
           icon: CheckCircle,
-          color: "text-neutral-900 border-neutral-900 bg-neutral-50",
+          color: "text-foreground border-border-custom bg-secondary-bg",
           text: (act: Activity) => `Completed subtask: "${act.metadata?.subtaskTitle}" (Parent: "${act.metadata?.taskTitle || act.taskId?.title || "Task"}")`
         };
       case "subtask_reopened":
         return {
           icon: Clock,
-          color: "text-neutral-500 border-neutral-200 bg-neutral-50",
+          color: "text-secondary-text border-border-custom bg-secondary-bg",
           text: (act: Activity) => `Reopened subtask: "${act.metadata?.subtaskTitle}" (Parent: "${act.metadata?.taskTitle || act.taskId?.title || "Task"}")`
         };
       case "subtask_deleted":
         return {
           icon: Trash2,
-          color: "text-neutral-500 border-neutral-200 bg-neutral-50",
+          color: "text-secondary-text border-border-custom bg-secondary-bg",
           text: (act: Activity) => `Deleted subtask: "${act.metadata?.subtaskTitle}" (Parent: "${act.metadata?.taskTitle || act.taskId?.title || "Task"}")`
         };
       case "subtask_due_date_changed":
         return {
           icon: Calendar,
-          color: "text-neutral-500 border-neutral-200 bg-neutral-50",
+          color: "text-secondary-text border-border-custom bg-secondary-bg",
           text: (act: Activity) => `Updated subtask deadline: "${act.metadata?.subtaskTitle}" to ${act.metadata?.newDueDate ? new Date(act.metadata.newDueDate).toLocaleDateString() : "No Date"} (Parent: "${act.metadata?.taskTitle || act.taskId?.title || "Task"}")`
         };
       case "focus_started":
         return {
           icon: Play,
-          color: "text-neutral-900 border-neutral-900 bg-neutral-100",
+          color: "text-foreground border-border-custom bg-hover-custom",
           text: (act: Activity) => act.metadata?.subtaskTitle
             ? `Started focusing on subtask: "${act.metadata.subtaskTitle}" (Parent: "${act.metadata.taskTitle || "Task"}") (${act.metadata.duration}m)`
             : `Started focus session on "${act.metadata?.taskTitle || "Task"}" (${act.metadata?.duration}m)`
@@ -179,7 +179,7 @@ export default function ActivityTimeline({ activities }: ActivityTimelineProps) 
       case "focus_completed":
         return {
           icon: CheckSquare,
-          color: "text-neutral-900 border-neutral-900 bg-neutral-50",
+          color: "text-foreground border-border-custom bg-secondary-bg",
           text: (act: Activity) => act.metadata?.subtaskTitle
             ? `Completed focus session on subtask: "${act.metadata.subtaskTitle}" (Parent: "${act.metadata.taskTitle || "Task"}") (${act.metadata.duration}m)`
             : `Completed focus session on "${act.metadata?.taskTitle || "Task"}" (${act.metadata?.duration}m)`
@@ -187,7 +187,7 @@ export default function ActivityTimeline({ activities }: ActivityTimelineProps) 
       case "focus_cancelled":
         return {
           icon: XOctagon,
-          color: "text-neutral-400 border-neutral-200 bg-neutral-50",
+          color: "text-secondary-text border-border-custom bg-secondary-bg",
           text: (act: Activity) => act.metadata?.subtaskTitle
             ? `Cancelled focus session on subtask: "${act.metadata.subtaskTitle}" (Parent: "${act.metadata.taskTitle || "Task"}")`
             : `Cancelled focus session on "${act.metadata?.taskTitle || "Task"}"`
@@ -195,7 +195,7 @@ export default function ActivityTimeline({ activities }: ActivityTimelineProps) 
       default:
         return {
           icon: Clock,
-          color: "text-neutral-400 border-neutral-200 bg-neutral-50",
+          color: "text-secondary-text border-border-custom bg-secondary-bg",
           text: (act: Activity) => `Logged activity: "${act.action}"`
         };
     }
@@ -203,7 +203,7 @@ export default function ActivityTimeline({ activities }: ActivityTimelineProps) 
 
   if (activities.length === 0) {
     return (
-      <div className="text-center py-6 text-xs text-neutral-400 font-semibold uppercase tracking-wider">
+      <div className="text-center py-8 text-xs text-secondary-text font-bold uppercase tracking-wider select-none">
         No recent activities logged
       </div>
     );
@@ -214,29 +214,29 @@ export default function ActivityTimeline({ activities }: ActivityTimelineProps) 
   return (
     <div className="space-y-6">
       {grouped.map((group, idx) => (
-        <div key={idx} className="space-y-3.5">
+        <div key={idx} className="space-y-4">
           {/* Day Label Header */}
-          <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest block">
+          <span className="text-[9px] font-bold text-secondary-text uppercase tracking-wider block select-none">
             {group.day}
           </span>
 
           {/* Timeline Feed items */}
-          <div className="relative border-l border-neutral-150 ml-2.5 pl-5 space-y-4">
+          <div className="relative border-l border-border-custom ml-2 pl-5 space-y-4">
             {group.items.map((act) => {
               const config = getActivityConfig(act.action);
               const Icon = config.icon;
               return (
-                <div key={act._id} className="relative text-xs leading-relaxed text-neutral-800 text-left">
+                <div key={act._id} className="relative text-xs leading-relaxed text-foreground text-left">
                   {/* Timeline circular absolute icon marker */}
-                  <div className={`absolute -left-[27.5px] top-0.5 w-4 h-4 rounded-full border flex items-center justify-center ${config.color}`}>
+                  <div className={`absolute -left-[28.5px] top-[2px] w-4 h-4 rounded-full border flex items-center justify-center shadow-3xs ${config.color}`}>
                     <Icon className="w-2.5 h-2.5 shrink-0" />
                   </div>
                   
                   <div className="flex justify-between items-start gap-4">
-                    <span className="font-semibold text-neutral-900 leading-tight">
+                    <span className="font-semibold text-foreground leading-snug">
                       {config.text(act)}
                     </span>
-                    <span className="text-[9px] text-neutral-400 font-bold whitespace-nowrap shrink-0">
+                    <span className="text-[9px] text-secondary-text font-bold whitespace-nowrap shrink-0 select-none">
                       {getRelativeTime(act.createdAt)}
                     </span>
                   </div>

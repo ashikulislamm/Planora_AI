@@ -491,15 +491,28 @@ export default function MyTasksPage() {
   const getPriorityStyle = (priority: "low" | "medium" | "high" | "critical") => {
     switch (priority) {
       case "low":
-        return "border-neutral-200 text-neutral-500 bg-neutral-50";
+        return "border-blue-200 text-blue-700 bg-blue-50/70";
       case "medium":
-        return "border-neutral-300 text-neutral-700 bg-neutral-100";
+        return "border-amber-250 text-amber-700 bg-amber-50/70";
       case "high":
-        return "border-neutral-400 text-neutral-900 bg-neutral-200";
+        return "border-orange-250 text-orange-700 bg-orange-50/70";
       case "critical":
-        return "border-neutral-950 text-white bg-neutral-950";
+        return "border-red-300 text-red-700 bg-red-50/80 font-extrabold animate-pulse shadow-sm shadow-red-100";
       default:
-        return "border-neutral-300 text-neutral-700 bg-neutral-100";
+        return "border-amber-250 text-amber-700 bg-amber-50/70";
+    }
+  };
+
+  const getStatusStyle = (status: "todo" | "in-progress" | "done") => {
+    switch (status) {
+      case "todo":
+        return "border-slate-350 text-slate-700 bg-slate-100 hover:bg-slate-200 hover:border-slate-400";
+      case "in-progress":
+        return "border-violet-300 text-violet-750 bg-violet-50 hover:bg-violet-100 hover:border-violet-300";
+      case "done":
+        return "border-emerald-350 text-emerald-800 bg-emerald-50 hover:bg-emerald-100 hover:border-emerald-300";
+      default:
+        return "border-slate-350 text-slate-700 bg-slate-100";
     }
   };
 
@@ -548,11 +561,11 @@ export default function MyTasksPage() {
       </div>
 
       {/* Toolbar: Search, Advanced Filters, and Sorting Controls */}
-      <div className="bg-secondary-bg border border-border-custom rounded-lg p-4 space-y-3.5 select-none shadow-xs">
+      <div className="bg-secondary-bg border border-border-custom rounded-xl p-4 space-y-3.5 select-none shadow-3xs">
         <div className="flex flex-col gap-3">
           {/* Search bar */}
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-secondary-text" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-secondary-text" />
             <input
               type="text"
               placeholder="Search tasks by title or description..."
@@ -560,8 +573,8 @@ export default function MyTasksPage() {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="
                 w-full pl-9 pr-4 py-2 text-xs bg-white border border-border-custom rounded-md 
-                placeholder-secondary-text text-foreground outline-none transition
-                focus:border-foreground focus:ring-1 focus:ring-foreground
+                placeholder-neutral-400 font-medium text-foreground outline-none transition-all duration-200
+                hover:border-neutral-350 focus:border-foreground focus:ring-4 focus:ring-black/5
               "
             />
           </div>
@@ -569,12 +582,12 @@ export default function MyTasksPage() {
           {/* Advanced Multi-Filters Dropdowns */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
             {/* Status Dropdown */}
-            <div className="flex flex-col gap-1">
-              <label className="text-[10px] font-bold text-secondary-text uppercase">Status</label>
+            <div className="flex flex-col gap-1 text-left">
+              <label className="text-[9px] font-bold text-secondary-text uppercase tracking-wider">Status</label>
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value as any)}
-                className="bg-white border border-border-custom rounded-md px-2.5 py-1.5 text-xs text-foreground outline-none cursor-pointer focus:border-foreground"
+                className="bg-white border border-border-custom rounded-md px-2.5 py-1.5 text-xs text-foreground outline-none cursor-pointer transition-all duration-200 hover:border-neutral-350 focus:border-foreground focus:ring-4 focus:ring-black/5"
               >
                 <option value="all">All Statuses</option>
                 <option value="todo">Todo</option>
@@ -584,12 +597,12 @@ export default function MyTasksPage() {
             </div>
 
             {/* Priority Dropdown */}
-            <div className="flex flex-col gap-1">
-              <label className="text-[10px] font-bold text-secondary-text uppercase">Priority</label>
+            <div className="flex flex-col gap-1 text-left">
+              <label className="text-[9px] font-bold text-secondary-text uppercase tracking-wider">Priority</label>
               <select
                 value={priorityFilter}
                 onChange={(e) => setPriorityFilter(e.target.value as any)}
-                className="bg-white border border-border-custom rounded-md px-2.5 py-1.5 text-xs text-foreground outline-none cursor-pointer focus:border-foreground"
+                className="bg-white border border-border-custom rounded-md px-2.5 py-1.5 text-xs text-foreground outline-none cursor-pointer transition-all duration-200 hover:border-neutral-350 focus:border-foreground focus:ring-4 focus:ring-black/5"
               >
                 <option value="all">All Priorities</option>
                 <option value="low">Low</option>
@@ -600,12 +613,12 @@ export default function MyTasksPage() {
             </div>
 
             {/* Category Dropdown */}
-            <div className="flex flex-col gap-1">
-              <label className="text-[10px] font-bold text-secondary-text uppercase">Category</label>
+            <div className="flex flex-col gap-1 text-left">
+              <label className="text-[9px] font-bold text-secondary-text uppercase tracking-wider">Category</label>
               <select
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value as any)}
-                className="bg-white border border-border-custom rounded-md px-2.5 py-1.5 text-xs text-foreground outline-none cursor-pointer focus:border-foreground"
+                className="bg-white border border-border-custom rounded-md px-2.5 py-1.5 text-xs text-foreground outline-none cursor-pointer transition-all duration-200 hover:border-neutral-350 focus:border-foreground focus:ring-4 focus:ring-black/5"
               >
                 <option value="all">All Categories</option>
                 <option value="work">Work</option>
@@ -616,12 +629,12 @@ export default function MyTasksPage() {
             </div>
 
             {/* Sorting Dropdown */}
-            <div className="flex flex-col gap-1">
-              <label className="text-[10px] font-bold text-secondary-text uppercase">Sort By</label>
+            <div className="flex flex-col gap-1 text-left">
+              <label className="text-[9px] font-bold text-secondary-text uppercase tracking-wider">Sort By</label>
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as any)}
-                className="bg-white border border-border-custom rounded-md px-2.5 py-1.5 text-xs text-foreground outline-none cursor-pointer focus:border-foreground"
+                className="bg-white border border-border-custom rounded-md px-2.5 py-1.5 text-xs text-foreground outline-none cursor-pointer transition-all duration-200 hover:border-neutral-350 focus:border-foreground focus:ring-4 focus:ring-black/5"
               >
                 <option value="newest">Newest Created</option>
                 <option value="oldest">Oldest Created</option>
@@ -638,7 +651,7 @@ export default function MyTasksPage() {
 
         {/* Quick Filter Tabs */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pt-2 border-t border-border-custom/50">
-          <div className="flex bg-neutral-100 border border-border-custom p-0.5 rounded-md text-sm font-semibold text-secondary-text w-full sm:w-auto overflow-x-auto">
+          <div className="flex bg-secondary-bg border border-border-custom p-0.5 rounded-lg text-secondary-text w-full sm:w-auto overflow-x-auto gap-0.5">
             {[
               { id: "all", label: `All Tasks (${totalCount})` },
               { id: "today", label: `Due Today (${dueTodayCount})` },
@@ -650,10 +663,10 @@ export default function MyTasksPage() {
                 key={tab.id}
                 onClick={() => setQuickFilter(tab.id as any)}
                 className={`
-                  px-3 py-1.5 rounded transition uppercase leading-none text-[11px] tracking-tight whitespace-nowrap shrink-0
+                  px-2.5 py-1.5 rounded-md transition-all duration-200 uppercase leading-none text-[10px] tracking-tight whitespace-nowrap shrink-0 font-bold cursor-pointer
                   ${quickFilter === tab.id
-                    ? "bg-white border border-border-custom text-foreground shadow-xs font-bold"
-                    : "hover:text-foreground hover:bg-hover-custom"
+                    ? "bg-white border border-border-custom text-foreground shadow-3xs font-extrabold"
+                    : "hover:text-foreground hover:bg-hover-custom/60"
                   }
                 `}
               >
@@ -674,7 +687,7 @@ export default function MyTasksPage() {
           <TaskListSkeleton />
         </div>
       ) : processedTasks.length > 0 ? (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3.5">
           <AnimatePresence mode="popLayout">
             {processedTasks.map((task) => {
               const overdue = isTaskOverdue(task);
@@ -687,7 +700,12 @@ export default function MyTasksPage() {
                   exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ duration: 0.15 }}
                   onClick={() => setSelectedTaskDetails(task)}
-                  className="p-4.5 bg-gradient-to-r from-gray-50 to-white border border-gray-300 rounded-lg shadow-xs hover:border-gray-500 hover:shadow-md transition flex items-center justify-between gap-4 group cursor-pointer"
+                  className={`p-4.5 rounded-xl transition-all duration-200 flex items-center justify-between gap-4 group cursor-pointer border hover:shadow-3xs
+                    ${task.status === "done"
+                      ? "bg-gradient-to-r from-emerald-50/15 to-white border-emerald-250 hover:border-emerald-400"
+                      : overdue
+                        ? "bg-gradient-to-r from-red-50/15 to-white border-red-250 hover:border-red-400"
+                        : "bg-white border-border-custom hover:border-neutral-400"}`}
                 >
                   <div className="flex items-start gap-3.5 min-w-0 flex-1">
                     {/* Status checkbox toggle */}
@@ -696,13 +714,13 @@ export default function MyTasksPage() {
                         e.stopPropagation(); // Avoid opening details drawer
                         handleQuickStatusChange(task, task.status === "done" ? "todo" : "done");
                       }}
-                      className="text-secondary-text hover:text-foreground shrink-0 mt-0.5 transition cursor-pointer"
+                      className="text-secondary-text hover:text-foreground shrink-0 mt-0.5 transition-all duration-150 active:scale-90 cursor-pointer"
                       aria-label={task.status === "done" ? "Mark todo" : "Mark completed"}
                     >
                       {task.status === "done" ? (
-                        <CheckCircle2 className="w-5 h-5 text-foreground" />
+                        <CheckCircle2 className="w-4.5 h-4.5 text-foreground" />
                       ) : (
-                        <Circle className="w-5 h-5" />
+                        <Circle className="w-4.5 h-4.5" />
                       )}
                     </button>
 
@@ -732,8 +750,8 @@ export default function MyTasksPage() {
 
                         {/* Overdue Badge */}
                         {overdue && (
-                          <span className="inline-flex items-center gap-0.5 border border-neutral-400 bg-neutral-100 text-neutral-900 px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase animate-pulse">
-                            <AlertCircle className="w-2.5 h-2.5" />
+                          <span className="inline-flex items-center gap-0.5 border border-red-250 bg-red-50 text-red-700 px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase animate-pulse shadow-sm shadow-red-100">
+                            <AlertCircle className="w-2.5 h-2.5 text-red-650" />
                             <span>Overdue</span>
                           </span>
                         )}
@@ -746,13 +764,13 @@ export default function MyTasksPage() {
                       {/* Subtask progress display on card */}
                       {task.subtasks && task.subtasks.length > 0 && (
                         <div className="mt-3 space-y-2.5 select-none" onClick={(e) => e.stopPropagation()}>
-                          <div className="flex justify-between items-center text-[10px] font-bold text-secondary-text uppercase">
+                          <div className={`flex justify-between items-center text-[10px] font-bold uppercase transition ${task.progressPercentage === 100 ? "text-emerald-700" : "text-secondary-text"}`}>
                             <span>{task.subtasks.filter((s) => s.completed).length} / {task.subtasks.length} Completed</span>
                             <span>{task.progressPercentage ?? 0}%</span>
                           </div>
                           <div className="w-full bg-neutral-100 border border-border-custom/50 rounded-full h-1.5 overflow-hidden">
                             <div 
-                              className="bg-neutral-900 h-full rounded-full transition-all duration-300"
+                              className={`h-full rounded-full transition-all duration-300 ${task.progressPercentage === 100 ? "bg-emerald-600" : "bg-neutral-900"}`}
                               style={{ width: `${task.progressPercentage ?? 0}%` }}
                             />
                           </div>
@@ -849,10 +867,10 @@ export default function MyTasksPage() {
                             onChange={(e) =>
                               handleQuickStatusChange(task, e.target.value as any)
                             }
-                            className="
-                              text-[10px] text-secondary-text font-bold bg-transparent outline-none cursor-pointer uppercase py-0 border-none 
-                              hover:text-foreground transition focus:ring-0 select-none
-                            "
+                            className={`
+                              text-[10px] font-extrabold outline-none cursor-pointer uppercase px-2 py-0.5 rounded border transition focus:ring-0 select-none
+                              ${getStatusStyle(task.status)}
+                            `}
                           >
                             <option value="todo">Todo</option>
                             <option value="in-progress">In Progress</option>
@@ -913,10 +931,10 @@ export default function MyTasksPage() {
             {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
-              animate={{ opacity: 0.4 }}
+              animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setSelectedTaskDetails(null)}
-              className="fixed inset-0 bg-black pointer-events-auto"
+              className="fixed inset-0 bg-neutral-950/30 backdrop-blur-sm pointer-events-auto"
             />
 
             {/* Slide-over Drawer panel */}
@@ -924,7 +942,7 @@ export default function MyTasksPage() {
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 220 }}
+              transition={{ type: "spring", damping: 30, stiffness: 300 }}
               className="relative w-full max-w-md h-full bg-white border-l border-border-custom shadow-2xl flex flex-col z-10 pointer-events-auto"
             >
               {/* Header */}
@@ -933,15 +951,15 @@ export default function MyTasksPage() {
                   <h3 className="text-base font-bold text-foreground truncate">
                     {selectedTaskDetails.title}
                   </h3>
-                  <p className="text-[10px] text-secondary-text uppercase font-semibold mt-0.5 tracking-wide">
+                  <p className="text-[9px] text-secondary-text uppercase font-bold mt-0.5 tracking-wider">
                     Task Workspace
                   </p>
                 </div>
                 <button
                   onClick={() => setSelectedTaskDetails(null)}
-                  className="text-secondary-text hover:text-foreground transition p-1 rounded-md hover:bg-hover-custom"
+                  className="text-secondary-text hover:text-foreground transition-all duration-200 p-1.5 rounded-lg hover:bg-hover-custom active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-foreground focus-visible:ring-offset-2"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="w-4.5 h-4.5" />
                 </button>
               </div>
 
@@ -949,13 +967,13 @@ export default function MyTasksPage() {
               <div className="flex-1 overflow-y-auto p-6 space-y-6 text-left">
                 {/* Meta details list */}
                 <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4 border border-border-custom rounded-lg p-3 bg-secondary-bg">
+                  <div className="grid grid-cols-2 gap-4 border border-border-custom rounded-xl p-4 bg-secondary-bg shadow-3xs">
                     <div>
-                      <span className="text-[9px] font-bold text-secondary-text uppercase block">Status</span>
+                      <span className="text-[9px] font-bold text-secondary-text uppercase tracking-wider block">Status</span>
                       <select
                         value={selectedTaskDetails.status}
                         onChange={(e) => handleQuickStatusChange(selectedTaskDetails, e.target.value as any)}
-                        className="text-xs text-foreground font-bold bg-transparent outline-none uppercase py-0.5 cursor-pointer mt-0.5 border-none"
+                        className={`text-[10px] font-extrabold outline-none uppercase px-2 py-0.5 rounded border cursor-pointer mt-1.5 shadow-3xs transition-all duration-200 hover:border-neutral-350 focus:ring-4 focus:ring-black/5 ${getStatusStyle(selectedTaskDetails.status)}`}
                       >
                         <option value="todo">Todo</option>
                         <option value="in-progress">In Progress</option>
@@ -963,21 +981,21 @@ export default function MyTasksPage() {
                       </select>
                     </div>
                     <div>
-                      <span className="text-[9px] font-bold text-secondary-text uppercase block">Priority</span>
-                      <span className={`inline-flex items-center gap-1 border px-2 py-0.5 rounded text-[10px] font-bold uppercase mt-1 ${getPriorityStyle(selectedTaskDetails.priority || "medium")}`}>
+                      <span className="text-[9px] font-bold text-secondary-text uppercase tracking-wider block">Priority</span>
+                      <span className={`inline-flex items-center gap-1 border px-2 py-0.5 rounded text-[10px] font-bold uppercase mt-1.5 shadow-3xs ${getPriorityStyle(selectedTaskDetails.priority || "medium")}`}>
                         <span>{getPrioritySymbol(selectedTaskDetails.priority || "medium")}</span>
                         <span>{selectedTaskDetails.priority || "medium"}</span>
                       </span>
                     </div>
                     <div>
-                      <span className="text-[9px] font-bold text-secondary-text uppercase block">Category</span>
-                      <span className="inline-block text-xs font-bold text-foreground mt-1.5 uppercase">
+                      <span className="text-[9px] font-bold text-secondary-text uppercase tracking-wider block">Category</span>
+                      <span className="inline-block text-xs font-bold text-foreground mt-2 uppercase tracking-wide">
                         [{selectedTaskDetails.category || "personal"}]
                       </span>
                     </div>
                     <div>
-                      <span className="text-[9px] font-bold text-secondary-text uppercase block">Due Date</span>
-                      <span className="inline-flex items-center gap-1 text-xs font-semibold mt-1.5 text-foreground">
+                      <span className="text-[9px] font-bold text-secondary-text uppercase tracking-wider block">Due Date</span>
+                      <span className="inline-flex items-center gap-1 text-xs font-bold mt-2 text-foreground">
                         <Calendar className="w-3.5 h-3.5 text-secondary-text" />
                         <span>
                           {selectedTaskDetails.dueDate
@@ -986,10 +1004,10 @@ export default function MyTasksPage() {
                         </span>
                       </span>
                     </div>
-                    <div className="col-span-2 border-t border-border-custom/50 pt-2.5 mt-1 select-none">
-                      <span className="text-[9px] font-bold text-secondary-text uppercase block">Focus Mode</span>
+                    <div className="col-span-2 border-t border-border-custom/50 pt-3 mt-1 select-none">
+                      <span className="text-[9px] font-bold text-secondary-text uppercase tracking-wider block">Focus Mode</span>
                       <Link href={`/dashboard/focus?taskId=${selectedTaskDetails._id}`} className="inline-block">
-                        <span className="inline-flex items-center gap-1 text-xs font-bold mt-1 text-foreground hover:underline">
+                        <span className="inline-flex items-center gap-1.5 text-xs font-bold mt-1.5 text-foreground hover:underline">
                           <Clock className="w-3.5 h-3.5 text-secondary-text animate-pulse" />
                           <span>Start Focus Session</span>
                         </span>
@@ -997,9 +1015,9 @@ export default function MyTasksPage() {
                     </div>
                   </div>
 
-                  <div className="space-y-1">
-                    <span className="text-[10px] font-bold text-secondary-text uppercase">Description</span>
-                    <p className="text-xs text-foreground leading-relaxed bg-neutral-50 border border-border-custom p-3 rounded-md whitespace-pre-wrap">
+                  <div className="space-y-1.5 text-left">
+                    <span className="text-[9px] font-bold text-secondary-text uppercase tracking-wider">Description</span>
+                    <p className="text-xs font-medium text-foreground leading-relaxed bg-neutral-50 border border-border-custom p-3.5 rounded-xl whitespace-pre-wrap">
                       {selectedTaskDetails.description}
                     </p>
                   </div>
@@ -1011,17 +1029,17 @@ export default function MyTasksPage() {
                 <div className="space-y-4">
                   <div className="flex justify-between items-center select-none text-left">
                     <div>
-                      <h4 className="text-xs font-bold text-foreground tracking-tight uppercase flex items-center gap-1.5">
-                        <CheckSquare className="w-4 h-4 text-secondary-text" />
+                      <h4 className="text-[10px] font-bold text-secondary-text tracking-wider uppercase flex items-center gap-1.5">
+                        <CheckSquare className="w-3.5 h-3.5 text-secondary-text" />
                         <span>Subtasks</span>
                       </h4>
-                      <p className="text-[10px] text-secondary-text leading-tight mt-0.5">
+                      <p className="text-[10px] text-secondary-text leading-tight mt-1 font-medium">
                         Break down work into smaller steps
                       </p>
                     </div>
                     {selectedTaskDetails.subtasks && selectedTaskDetails.subtasks.length > 0 && (
-                      <span className="text-[10px] font-bold text-secondary-text px-2 py-0.5 border border-border-custom bg-secondary-bg rounded-md uppercase">
-                        {selectedTaskDetails.subtasks.filter(s => s.completed).length} / {selectedTaskDetails.subtasks.length} Completed
+                      <span className="text-[9px] font-bold text-secondary-text px-2 py-0.5 border border-border-custom bg-secondary-bg rounded-md uppercase shadow-3xs">
+                        {selectedTaskDetails.subtasks.filter(s => s.completed).length} / {selectedTaskDetails.subtasks.length}
                       </span>
                     )}
                   </div>
@@ -1048,7 +1066,7 @@ export default function MyTasksPage() {
                         return (
                           <div 
                             key={subtask._id} 
-                            className="p-2.5 bg-secondary-bg border border-border-custom rounded-md flex items-center justify-between gap-3 group/subtask transition hover:border-neutral-300 text-left"
+                            className="p-2.5 bg-secondary-bg border border-border-custom rounded-lg flex items-center justify-between gap-3 group/subtask transition-all duration-200 hover:border-neutral-350 hover:shadow-3xs text-left"
                           >
                             {isEditing ? (
                               <form 
@@ -1199,7 +1217,7 @@ export default function MyTasksPage() {
                       value={newSubtaskTitle}
                       onChange={(e) => setNewSubtaskTitle(e.target.value)}
                       disabled={addSubtaskMutation.isPending}
-                      className="w-full text-xs px-2.5 py-2 bg-white border border-border-custom rounded-md placeholder-secondary-text text-foreground outline-none transition focus:border-foreground focus:ring-1 focus:ring-foreground"
+                      className="w-full text-xs px-3 py-2 bg-white border border-border-custom rounded-md placeholder-neutral-400 text-foreground outline-none transition-all duration-200 hover:border-neutral-350 focus:border-foreground focus:ring-4 focus:ring-black/5"
                     />
                     <div className="flex justify-between items-center gap-3">
                       <div className="flex items-center gap-1.5">
@@ -1209,7 +1227,7 @@ export default function MyTasksPage() {
                           value={newSubtaskDueDate}
                           onChange={(e) => setNewSubtaskDueDate(e.target.value)}
                           disabled={addSubtaskMutation.isPending}
-                          className="text-[11px] px-2 py-1 bg-white border border-border-custom rounded-md text-foreground outline-none cursor-pointer focus:border-foreground"
+                          className="text-[11px] px-2 py-1 bg-white border border-border-custom rounded-md text-foreground outline-none cursor-pointer transition-all duration-200 hover:border-neutral-350 focus:border-foreground focus:ring-4 focus:ring-black/5"
                         />
                       </div>
                       <Button
@@ -1245,7 +1263,7 @@ export default function MyTasksPage() {
                       value={logContent}
                       onChange={(e) => setLogContent(e.target.value)}
                       disabled={addLogMutation.isPending}
-                      className="w-full text-xs p-2.5 bg-white border border-border-custom rounded-md placeholder-secondary-text text-foreground outline-none transition focus:border-foreground focus:ring-1 focus:ring-foreground"
+                      className="w-full text-xs p-2.5 bg-white border border-border-custom rounded-md placeholder-neutral-400 text-foreground outline-none transition-all duration-200 hover:border-neutral-350 focus:border-foreground focus:ring-4 focus:ring-black/5"
                     />
                     <div className="flex justify-end">
                       <Button
@@ -1536,7 +1554,7 @@ export default function MyTasksPage() {
           />
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-foreground tracking-tight select-none">
+            <label className="text-[10px] font-bold text-secondary-text uppercase tracking-wider select-none text-left">
               Description
             </label>
             <textarea
@@ -1544,16 +1562,16 @@ export default function MyTasksPage() {
               placeholder="Provide context or instructions for this task..."
               disabled={updateTaskMutation.isPending}
               className={`
-                w-full px-3 py-2 text-sm bg-white border border-border-custom rounded-md 
-                placeholder-secondary-text text-foreground outline-none transition
-                focus:border-foreground focus:ring-1 focus:ring-foreground
+                w-full px-3 py-2 text-xs sm:text-sm bg-white border border-border-custom rounded-md 
+                placeholder-neutral-400 font-normal text-foreground outline-none transition-all duration-200
+                hover:border-neutral-350 focus:border-foreground focus:ring-4 focus:ring-black/5
                 disabled:bg-secondary-bg disabled:text-secondary-text disabled:cursor-not-allowed
-                ${editErrors.description?.message ? "border-foreground ring-1 ring-foreground" : ""}
+                ${editErrors.description?.message ? "border-foreground ring-4 ring-black/5 font-semibold" : ""}
               `}
               {...registerEdit("description")}
             />
             {editErrors.description?.message && (
-              <span className="text-xs text-foreground font-medium mt-0.5 block">
+              <span className="text-[11px] text-foreground font-bold tracking-tight mt-1 text-left">
                 {editErrors.description.message}
               </span>
             )}
@@ -1561,15 +1579,15 @@ export default function MyTasksPage() {
 
           <div className="grid grid-cols-2 gap-3.5">
             <div className="flex flex-col gap-1.5 select-none">
-              <label className="text-xs font-semibold text-foreground tracking-tight">
+              <label className="text-[10px] font-bold text-secondary-text uppercase tracking-wider select-none text-left">
                 Category
               </label>
               <select
                 disabled={updateTaskMutation.isPending}
                 className="
-                  w-full px-3 py-2 text-sm bg-white border border-border-custom rounded-md 
-                  text-foreground outline-none cursor-pointer transition uppercase font-semibold
-                  focus:border-foreground focus:ring-1 focus:ring-foreground
+                  w-full px-3 py-2 text-xs sm:text-sm bg-white border border-border-custom rounded-md 
+                  text-foreground outline-none cursor-pointer transition-all duration-200 uppercase font-semibold
+                  hover:border-neutral-350 focus:border-foreground focus:ring-4 focus:ring-black/5
                 "
                 {...registerEdit("category")}
               >
@@ -1581,15 +1599,15 @@ export default function MyTasksPage() {
             </div>
 
             <div className="flex flex-col gap-1.5 select-none">
-              <label className="text-xs font-semibold text-foreground tracking-tight">
+              <label className="text-[10px] font-bold text-secondary-text uppercase tracking-wider select-none text-left">
                 Priority
               </label>
               <select
                 disabled={updateTaskMutation.isPending}
                 className="
-                  w-full px-3 py-2 text-sm bg-white border border-border-custom rounded-md 
-                  text-foreground outline-none cursor-pointer transition uppercase font-semibold
-                  focus:border-foreground focus:ring-1 focus:ring-foreground
+                  w-full px-3 py-2 text-xs sm:text-sm bg-white border border-border-custom rounded-md 
+                  text-foreground outline-none cursor-pointer transition-all duration-200 uppercase font-semibold
+                  hover:border-neutral-350 focus:border-foreground focus:ring-4 focus:ring-black/5
                 "
                 {...registerEdit("priority")}
               >

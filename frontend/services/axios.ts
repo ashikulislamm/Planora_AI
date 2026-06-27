@@ -52,15 +52,41 @@ apiClient.interceptors.request.use(
   }
 );
 
-// Response interceptor to handle authorization errors or format standard outputs
+// Response interceptor to handle authorization errors and execute silent token refresh
 apiClient.interceptors.response.use(
   (response) => response,
-  (error) => {
-    // If we receive a 401 Unauthorized, we can trigger state clearance
-    if (error.response?.status === 401 && typeof window !== "undefined") {
-      localStorage.removeItem("token");
-      // Optional: redirect to login if we are inside dashboard (handled in context)
+  async (error) => {
+    const originalRequest = error.config;
+    
+    // Check if error is 401 Unauthorized and we haven't retried this request yet
+    if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
+      originalRequest._retry = true;
+      
+      try {
+        // Call the refresh endpoint to obtain a new access token
+        const refreshResponse = await axios.post(
+          `${API_BASE_URL}/auth/refresh`,
+          {},
+          { withCredentials: true }
+        );
+        
+        if (refreshResponse.data.success) {
+          const newAccessToken = refreshResponse.data.data.accessToken;
+          localStorage.setItem("token", newAccessToken);
+          
+          // Re-attach the new token to the headers and retry
+          originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+          return apiClient(originalRequest);
+        }
+      } catch (refreshError) {
+        console.error("Session refresh failed or expired:", refreshError);
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("token");
+          window.location.href = "/login";
+        }
+      }
     }
+    
     return Promise.reject(error);
   }
 );

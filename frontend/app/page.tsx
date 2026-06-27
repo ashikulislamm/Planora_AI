@@ -89,9 +89,9 @@ export default function LandingPage() {
               return (
                 <div 
                   key={i} 
-                  className="p-6 bg-white border border-border-custom rounded-xl transition duration-200 hover:-translate-y-1 hover:shadow-sm flex flex-col"
+                  className="p-6 bg-white border border-border-custom rounded-xl transition-all duration-300 hover:-translate-y-1.5 hover:shadow-3xs hover:border-neutral-350 flex flex-col group/card"
                 >
-                  <div className="w-9 h-9 rounded-lg border border-border-custom bg-secondary-bg flex items-center justify-center text-foreground mb-5">
+                  <div className="w-9 h-9 rounded-lg border border-border-custom bg-secondary-bg flex items-center justify-center text-foreground mb-5 group-hover/card:bg-neutral-900 group-hover/card:text-white transition-all duration-300">
                     <Icon className="w-4.5 h-4.5" />
                   </div>
                   <h3 className="text-sm font-semibold text-foreground tracking-tight mb-2">

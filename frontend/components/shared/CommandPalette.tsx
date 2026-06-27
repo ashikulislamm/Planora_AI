@@ -145,38 +145,38 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
           {/* Backdrop Overlay */}
           <motion.div
             initial={{ opacity: 0 }}
-            animate={{ opacity: 0.3 }}
+            animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black pointer-events-auto"
+            className="fixed inset-0 bg-neutral-950/30 backdrop-blur-sm pointer-events-auto"
           />
 
           {/* Palette Box */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.97, y: -8 }}
+            initial={{ opacity: 0, scale: 0.98, y: -4 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.97, y: -8 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
+            exit={{ opacity: 0, scale: 0.98, y: -4 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
             className="
               relative w-full max-w-xl bg-white border border-border-custom
               rounded-xl shadow-2xl z-10 overflow-hidden flex flex-col pointer-events-auto
             "
           >
             {/* Input Header */}
-            <div className="flex items-center gap-3 px-4 py-3.5 border-b border-border-custom bg-white">
+            <div className="flex items-center gap-3 px-4.5 py-4 border-b border-border-custom bg-white">
               <Search className="w-4.5 h-4.5 text-secondary-text shrink-0" />
               <input
                 ref={inputRef}
                 type="text"
-                placeholder="Type a command or search actions..."
+                placeholder="Search commands and actions..."
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);
                   setActiveIndex(0);
                 }}
-                className="w-full text-sm outline-none text-foreground bg-transparent placeholder-secondary-text"
+                className="w-full text-xs sm:text-sm outline-none text-foreground bg-transparent placeholder-neutral-400 font-medium"
               />
-              <span className="text-[10px] font-semibold text-secondary-text bg-secondary-bg border border-border-custom px-1.5 py-0.5 rounded uppercase">
+              <span className="text-[10px] font-bold text-secondary-text bg-secondary-bg border border-border-custom px-1.5 py-0.5 rounded uppercase tracking-wider select-none shadow-3xs">
                 esc
               </span>
             </div>
@@ -184,7 +184,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
             {/* Actions List */}
             <div
               ref={listRef}
-              className="max-h-[300px] overflow-y-auto p-2 bg-white flex flex-col gap-0.5"
+              className="max-h-[320px] overflow-y-auto p-2 bg-white flex flex-col gap-0.5"
             >
               {filteredActions.length > 0 ? (
                 filteredActions.map((action, idx) => {
@@ -196,26 +196,26 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                       onClick={() => action.perform()}
                       onMouseEnter={() => setActiveIndex(idx)}
                       className={`
-                        flex items-center justify-between px-3 py-2.5 rounded-lg cursor-pointer transition select-none
+                        flex items-center justify-between px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-150 select-none
                         ${isActive ? "bg-hover-custom text-foreground" : "bg-white text-secondary-text"}
                       `}
                     >
-                      <div className="flex items-center gap-3">
-                        <div className={`p-1.5 rounded-md ${isActive ? "bg-white border border-border-custom text-foreground" : "text-secondary-text"}`}>
+                      <div className="flex items-center gap-3.5">
+                        <div className={`p-1.5 rounded-md transition-all duration-150 ${isActive ? "bg-white border border-border-custom text-foreground shadow-3xs" : "border border-transparent text-secondary-text"}`}>
                           <Icon className="w-4 h-4 shrink-0" />
                         </div>
-                        <div className="flex flex-col">
-                          <span className={`text-xs font-semibold ${isActive ? "text-foreground" : "text-foreground"}`}>
+                        <div className="flex flex-col text-left">
+                          <span className="text-xs font-bold text-foreground">
                             {action.title}
                           </span>
-                          <span className="text-[11px] text-secondary-text leading-tight mt-0.5">
+                          <span className="text-[11px] text-secondary-text leading-tight mt-0.5 font-medium">
                             {action.subtitle}
                           </span>
                         </div>
                       </div>
                       
                       {isActive && (
-                        <div className="flex items-center gap-1 text-[10px] text-secondary-text font-medium uppercase shrink-0">
+                        <div className="flex items-center gap-1 text-[9px] text-secondary-text font-bold uppercase tracking-wider shrink-0 mr-1 select-none">
                           <span>select</span>
                           <CornerDownLeft className="w-3 h-3 text-secondary-text" />
                         </div>
@@ -224,24 +224,24 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                   );
                 })
               ) : (
-                <div className="text-center py-8 text-xs text-secondary-text">
+                <div className="text-center py-8 text-xs text-secondary-text font-medium select-none">
                   No commands found matching "{search}"
                 </div>
               )}
             </div>
 
             {/* Footer helper */}
-            <div className="px-4 py-2.5 border-t border-border-custom bg-secondary-bg text-[10px] text-secondary-text flex items-center justify-between select-none">
+            <div className="px-4.5 py-3 border-t border-border-custom bg-secondary-bg text-[10px] font-bold text-secondary-text flex items-center justify-between select-none">
               <div className="flex items-center gap-3">
-                <span className="flex items-center gap-0.5">
-                  <span className="font-semibold px-1 py-0.5 border border-border-custom rounded bg-white">↑↓</span> navigate
+                <span className="flex items-center gap-1 font-semibold">
+                  <span className="px-1.5 py-0.5 border border-border-custom rounded bg-white text-[9px] font-bold">↑↓</span> navigate
                 </span>
-                <span className="flex items-center gap-0.5">
-                  <span className="font-semibold px-1 py-0.5 border border-border-custom rounded bg-white">enter</span> execute
+                <span className="flex items-center gap-1 font-semibold">
+                  <span className="px-1.5 py-0.5 border border-border-custom rounded bg-white text-[9px] font-bold">enter</span> execute
                 </span>
               </div>
-              <div>
-                Press <span className="font-semibold px-1 py-0.5 border border-border-custom rounded bg-white">Ctrl K</span> to toggle palette
+              <div className="font-semibold">
+                Press <span className="px-1.5 py-0.5 border border-border-custom rounded bg-white text-[9px] font-bold">Ctrl K</span> to toggle
               </div>
             </div>
           </motion.div>
@@ -250,3 +250,4 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     </AnimatePresence>
   );
 };
+

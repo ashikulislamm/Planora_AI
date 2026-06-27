@@ -142,7 +142,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
 
           {/* Navigation Links */}
-          <nav className="flex-1 p-4 space-y-1">
+          <nav className="flex-1 p-3.5 space-y-0.5">
             {navItems.map((item, idx) => {
               const Icon = item.icon;
               const isActive = item.href === "/dashboard"
@@ -153,10 +153,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <Link key={idx} href={item.href}>
                   <span
                     className={`
-                      flex items-center gap-3 px-3 py-2 rounded-md text-xs font-semibold tracking-tight transition-colors cursor-pointer
+                      flex items-center gap-3 px-3 py-2 rounded-md text-xs font-semibold tracking-tight transition-all duration-200 cursor-pointer
                       ${isActive 
-                        ? "bg-white border border-border-custom text-foreground" 
-                        : "text-secondary-text hover:text-foreground hover:bg-hover-custom"
+                        ? "bg-white border border-border-custom text-foreground shadow-3xs font-bold" 
+                        : "text-secondary-text hover:text-foreground hover:bg-hover-custom/60"
                       }
                     `}
                   >
@@ -169,7 +169,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </nav>
 
           {/* Bottom user profile logout info */}
-          <div className="p-4 border-t border-border-custom bg-secondary-bg">
+          <div className="p-3.5 border-t border-border-custom bg-secondary-bg">
             <button
               onClick={logout}
               className="flex items-center gap-3 w-full px-3 py-2 text-xs font-semibold text-secondary-text hover:text-foreground hover:bg-hover-custom rounded-md transition-colors"
@@ -229,10 +229,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       <Link key={idx} href={item.href}>
                         <span
                           className={`
-                            flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold tracking-tight transition cursor-pointer
+                            flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold tracking-tight transition-all duration-200 cursor-pointer
                             ${isActive 
-                              ? "bg-white border border-border-custom text-foreground shadow-sm" 
-                              : "text-secondary-text hover:text-foreground hover:bg-hover-custom"
+                              ? "bg-white border border-border-custom text-foreground shadow-3xs font-bold" 
+                              : "text-secondary-text hover:text-foreground hover:bg-hover-custom/60"
                             }
                           `}
                         >
@@ -248,7 +248,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <div className="border-t border-border-custom pt-4">
                   <button
                     onClick={logout}
-                    className="flex items-center gap-3 w-full px-3 py-2.5 text-xs font-semibold text-secondary-text hover:text-foreground hover:bg-hover-custom rounded-lg transition"
+                    className="flex items-center gap-3 w-full px-3 py-2.5 text-xs font-semibold text-secondary-text hover:text-foreground hover:bg-hover-custom rounded-lg transition-colors"
                   >
                     <LogOut className="w-4 h-4 shrink-0" />
                     <span>Logout</span>
@@ -279,13 +279,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 className="
                   hidden sm:flex items-center gap-2.5 w-full max-w-xs px-3 py-1.5 
                   border border-border-custom rounded-md bg-secondary-bg hover:bg-hover-custom 
-                  cursor-pointer transition select-none text-secondary-text text-xs font-medium
+                  cursor-pointer transition-all duration-200 select-none text-secondary-text text-[11px] font-bold uppercase tracking-wider
                 "
               >
-                <Search className="w-3.5 h-3.5" />
+                <Search className="w-3.5 h-3.5 text-secondary-text" />
                 <span>Search dashboard...</span>
-                <span className="ml-auto inline-flex items-center gap-0.5 text-xs font-semibold border border-border-custom px-1.5 py-0.5 rounded bg-white leading-none">
-                  <Command className="w-2 h-2" />
+                <span className="ml-auto inline-flex items-center gap-0.5 text-[9px] font-extrabold border border-border-custom px-1.5 py-0.5 rounded bg-white leading-none shadow-3xs">
+                  <Command className="w-2.5 h-2.5" />
                   <span>K</span>
                 </span>
               </div>
@@ -298,9 +298,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 variant="primary"
                 size="sm"
                 onClick={() => setCreateModalOpen(true)}
-                className="hidden sm:inline-flex"
+                className="hidden sm:inline-flex shadow-3xs"
               >
-                <Plus className="w-4.5 h-4.5 mr-1" />
+                <Plus className="w-4 h-4 mr-1" />
                 <span>New Task</span>
               </Button>
 
@@ -316,15 +316,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <div className="w-px h-6 bg-border-custom hidden sm:block" />
 
               {/* Profile Shortcut */}
-              <Link href="/dashboard/profile" className="flex items-center gap-2 group cursor-pointer select-none">
-                <div className="w-8 h-8 rounded-full border border-border-custom bg-secondary-bg flex items-center justify-center text-xs font-bold text-foreground group-hover:bg-hover-custom transition">
+              <Link href="/dashboard/profile" className="flex items-center gap-2.5 group cursor-pointer select-none">
+                <div className="w-7.5 h-7.5 rounded-full border border-border-custom bg-secondary-bg flex items-center justify-center text-xs font-bold text-foreground group-hover:bg-hover-custom group-hover:border-neutral-350 transition-all duration-200 shadow-3xs">
                   {getInitials(user.name)}
                 </div>
-                <div className="hidden lg:flex flex-col text-left shrink-0 max-w-[120px]">
-                  <span className="text-xs font-semibold text-foreground truncate leading-tight group-hover:underline">
+                <div className="hidden lg:flex flex-col text-left shrink-0 max-w-[125px]">
+                  <span className="text-xs font-bold text-foreground truncate leading-tight group-hover:underline">
                     {user.name}
                   </span>
-                  <span className="text-xs text-secondary-text truncate leading-none mt-1">
+                  <span className="text-[10px] text-secondary-text truncate leading-none mt-0.5">
                     {user.email}
                   </span>
                 </div>

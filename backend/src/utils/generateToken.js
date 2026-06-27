@@ -9,12 +9,12 @@ export const generateAccessToken = (userId) => {
     throw new Error('JWT_SECRET environment variable is not defined');
   }
   return jwt.sign({ id: userId.toString() }, secret, {
-    expiresIn: '15m',
+    expiresIn: '2h',
   });
 };
 
 /**
- * Generate a long-lived refresh token (7 days)
+ * Generate a long-lived refresh token (30 days)
  */
 export const generateRefreshToken = (userId) => {
   const secret = process.env.JWT_SECRET;
@@ -22,6 +22,6 @@ export const generateRefreshToken = (userId) => {
     throw new Error('JWT_SECRET environment variable is not defined');
   }
   return jwt.sign({ id: userId.toString() }, secret, {
-    expiresIn: '7d',
+    expiresIn: '30d',
   });
 };

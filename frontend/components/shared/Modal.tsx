@@ -54,28 +54,28 @@ export const Modal: React.FC<ModalProps> = ({
           {/* Backdrop Overlay */}
           <motion.div
             initial={{ opacity: 0 }}
-            animate={{ opacity: 0.4 }}
+            animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black pointer-events-auto"
+            className="fixed inset-0 bg-neutral-950/30 backdrop-blur-sm pointer-events-auto"
           />
 
           {/* Modal content */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            initial={{ opacity: 0, scale: 0.98, y: 8 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 10 }}
-            transition={{ type: "spring", duration: 0.35 }}
+            exit={{ opacity: 0, scale: 0.98, y: 8 }}
+            transition={{ type: "spring", bounce: 0.05, duration: 0.25 }}
             ref={modalRef}
             className={`
               relative w-full ${sizes[size]} bg-white border border-border-custom 
-              rounded-xl shadow-xl z-10 overflow-hidden flex flex-col pointer-events-auto
+              rounded-xl shadow-2xl z-10 overflow-hidden flex flex-col pointer-events-auto
             `}
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-border-custom bg-white">
+            <div className="flex items-center justify-between px-6 py-4.5 border-b border-border-custom bg-white">
               {title ? (
-                <h3 className="text-base font-semibold text-foreground tracking-tight">
+                <h3 className="text-sm sm:text-base font-bold text-foreground tracking-tight select-none">
                   {title}
                 </h3>
               ) : (
@@ -83,15 +83,15 @@ export const Modal: React.FC<ModalProps> = ({
               )}
               <button
                 onClick={onClose}
-                className="text-secondary-text hover:text-foreground transition p-1 rounded-md hover:bg-hover-custom"
+                className="text-secondary-text hover:text-foreground transition-all duration-200 p-1.5 rounded-lg hover:bg-hover-custom active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-foreground focus-visible:ring-offset-2"
                 aria-label="Close modal"
               >
-                <X className="w-4.5 h-4.5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
             {/* Body */}
-            <div className="px-6 py-5 flex-1 max-h-[80vh] overflow-y-auto bg-white">
+            <div className="px-6 py-6 flex-1 max-h-[75vh] overflow-y-auto bg-white">
               {children}
             </div>
           </motion.div>

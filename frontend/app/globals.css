@@ -2,11 +2,11 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #111111;
-  --secondary-bg: #f8f8f8;
-  --border-color: #e5e5e5;
-  --secondary-text: #666666;
-  --hover-color: #f2f2f2;
+  --foreground: #09090b; /* Zinc 950 for premium dark text */
+  --secondary-bg: #fafafa; /* Zinc 50 for clean dashboard cards backing */
+  --border-color: #e4e4e7; /* Zinc 200 for subtle borders */
+  --secondary-text: #71717a; /* Zinc 500 for readable muted text */
+  --hover-color: #f4f4f5; /* Zinc 100 for premium hover background */
 }
 
 @theme {
@@ -33,14 +33,16 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), "Inter", sans-serif;
+  font-family: var(--font-sans);
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Custom Scrollbar for modern SaaS feel */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
@@ -48,12 +50,12 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #e5e5e5;
-  border-radius: 3px;
+  background: #e4e4e7; /* Zinc 200 */
+  border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #cccccc;
+  background: #d4d4d8; /* Zinc 300 */
 }
 
 /* Base style overrides */
@@ -68,3 +70,18 @@ input[type="search"]::-webkit-search-results-button,
 input[type="search"]::-webkit-search-results-decoration {
   -webkit-appearance: none;
 }
+
+/* Focus utility for sleek keyboard navigation */
+.focus-ring {
+  outline: none;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.focus-ring:focus-visible {
+  ring-width: 2px;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  border-color: var(--foreground);
+  box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--foreground);
+}
+

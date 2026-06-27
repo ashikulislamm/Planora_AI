@@ -232,7 +232,7 @@ export default function SettingsPage() {
       </div>
 
       {/* SECTION 3: Danger Zone */}
-      <div className="p-6 bg-white border border-foreground/45 rounded-xl space-y-5">
+      <div className="p-6 bg-white border border-red-200 hover:border-red-300 transition-colors duration-300 rounded-xl space-y-5">
         <div className="select-none">
           <h3 className="text-sm font-bold text-foreground tracking-tight">
             Danger Zone

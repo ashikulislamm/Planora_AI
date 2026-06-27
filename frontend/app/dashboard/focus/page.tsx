@@ -303,24 +303,24 @@ export default function FocusModePage() {
               </div>
 
               {/* Task Detail Card */}
-              <div className="max-w-md mx-auto p-6 border border-neutral-200 rounded-2xl bg-neutral-50 text-left space-y-3.5 shadow-sm">
+              <div className="max-w-md mx-auto p-5 border border-border-custom rounded-xl bg-secondary-bg text-left space-y-3 shadow-3xs hover:border-neutral-350 transition-all duration-200">
                 <div>
-                  <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider block">CURRENT MISSION</span>
-                  <h3 className="text-sm font-bold text-neutral-900 mt-0.5">
+                  <span className="text-[9px] font-bold text-secondary-text uppercase tracking-wider block">CURRENT MISSION</span>
+                  <h3 className="text-sm font-bold text-foreground mt-0.5">
                     {currentSession?.subtask ? currentSession.subtask.title : activeTask?.title}
                   </h3>
                   {currentSession?.subtask && (
-                    <p className="text-[10px] text-neutral-500 font-semibold mt-1">Parent: {activeTask?.title}</p>
+                    <p className="text-[10px] text-secondary-text font-semibold mt-1">Parent: {activeTask?.title}</p>
                   )}
                 </div>
                 {activeTask?.description && (
-                  <p className="text-xs text-neutral-500 leading-relaxed truncate">{activeTask.description}</p>
+                  <p className="text-xs text-secondary-text leading-relaxed truncate font-medium">{activeTask.description}</p>
                 )}
                 <div className="flex items-center gap-1.5 select-none pt-1">
-                  <span className="text-[9px] text-neutral-600 font-bold uppercase border border-neutral-300 bg-white px-2 py-0.5 rounded leading-none">
+                  <span className="text-[9px] text-foreground font-bold uppercase border border-border-custom bg-white px-2 py-0.5 rounded leading-none shadow-3xs">
                     {activeTask?.category}
                   </span>
-                  <span className="text-[9px] text-neutral-600 font-bold uppercase border border-neutral-300 bg-white px-2 py-0.5 rounded leading-none">
+                  <span className="text-[9px] text-foreground font-bold uppercase border border-border-custom bg-white px-2 py-0.5 rounded leading-none shadow-3xs">
                     {activeTask?.priority} Priority
                   </span>
                 </div>
@@ -330,10 +330,10 @@ export default function FocusModePage() {
               <div className="flex items-center justify-center gap-4 pt-4">
                 <button
                   onClick={() => setIsPaused(!isPaused)}
-                  className={`w-14 h-14 rounded-full flex items-center justify-center cursor-pointer transition border border-neutral-300 shadow-sm
+                  className={`w-14 h-14 rounded-full flex items-center justify-center cursor-pointer transition-all duration-200 border border-border-custom shadow-xs hover:scale-105 active:scale-95
                     ${isPaused 
-                      ? "bg-neutral-900 text-white hover:bg-neutral-800" 
-                      : "bg-white text-neutral-900 hover:bg-neutral-50"
+                      ? "bg-foreground text-background hover:bg-neutral-800" 
+                      : "bg-white text-foreground hover:bg-hover-custom"
                     }
                   `}
                   aria-label={isPaused ? "Resume Timer" : "Pause Timer"}
@@ -343,7 +343,7 @@ export default function FocusModePage() {
                 
                 <button
                   onClick={() => setShowCancelConfirm(true)}
-                  className="w-14 h-14 rounded-full bg-white text-neutral-500 border border-neutral-200 hover:text-neutral-950 hover:bg-neutral-50 flex items-center justify-center cursor-pointer transition shadow-sm"
+                  className="w-14 h-14 rounded-full bg-white text-secondary-text border border-border-custom hover:text-foreground hover:bg-hover-custom flex items-center justify-center cursor-pointer transition-all duration-200 hover:border-neutral-350 shadow-xs hover:scale-105 active:scale-95"
                   aria-label="Cancel session"
                 >
                   <X className="w-5 h-5" />
@@ -369,12 +369,12 @@ export default function FocusModePage() {
               <div className="space-y-5 text-left">
                 {/* Task Selection */}
                 <div className="flex flex-col gap-1.5 select-none">
-                  <label className="text-xs font-bold text-neutral-500 uppercase tracking-wider">Focus Target</label>
+                  <label className="text-[10px] font-bold text-secondary-text uppercase tracking-wider">Focus Target</label>
                   {pendingTasks.length > 0 ? (
                     <select
                       value={selectedTaskId}
                       onChange={(e) => setSelectedTaskId(e.target.value)}
-                      className="w-full px-3 py-2.5 text-xs bg-white border border-neutral-200 rounded-lg text-neutral-900 outline-none cursor-pointer focus:border-neutral-900"
+                      className="w-full px-3 py-2.5 text-xs bg-white border border-border-custom rounded-md text-foreground outline-none cursor-pointer transition-all duration-200 hover:border-neutral-350 focus:border-foreground focus:ring-4 focus:ring-black/5"
                     >
                       {pendingTasks.map((t) => (
                         <option key={t._id} value={t._id}>
@@ -383,9 +383,9 @@ export default function FocusModePage() {
                       ))}
                     </select>
                   ) : (
-                    <div className="p-3 border border-dashed border-neutral-300 rounded-lg text-center bg-neutral-50">
-                      <p className="text-xs text-neutral-500">No active tasks available. Create one first!</p>
-                      <Link href="/dashboard" className="text-xs text-neutral-900 font-bold underline mt-1.5 block">
+                    <div className="p-4 border border-dashed border-border-custom rounded-xl text-center bg-secondary-bg">
+                      <p className="text-xs text-secondary-text font-medium">No active tasks available. Create one first!</p>
+                      <Link href="/dashboard" className="text-xs text-foreground font-bold underline mt-1.5 block">
                         Go to Dashboard
                       </Link>
                     </div>
@@ -399,11 +399,11 @@ export default function FocusModePage() {
                     const incompleteSubtasks = selectedTask.subtasks.filter(s => !s.completed);
                     return (
                       <div className="flex flex-col gap-1.5 select-none animate-fadeIn">
-                        <label className="text-xs font-bold text-neutral-500 uppercase tracking-wider">Focus Subtask (Optional)</label>
+                        <label className="text-[10px] font-bold text-secondary-text uppercase tracking-wider">Focus Subtask (Optional)</label>
                         <select
                           value={selectedSubtaskId}
                           onChange={(e) => setSelectedSubtaskId(e.target.value)}
-                          className="w-full px-3 py-2.5 text-xs bg-white border border-neutral-200 rounded-lg text-neutral-900 outline-none cursor-pointer focus:border-neutral-900 animate-fadeIn"
+                          className="w-full px-3 py-2.5 text-xs bg-white border border-border-custom rounded-md text-foreground outline-none cursor-pointer transition-all duration-200 hover:border-neutral-350 focus:border-foreground focus:ring-4 focus:ring-black/5 animate-fadeIn"
                         >
                           <option value="">Focus on Entire Parent Task</option>
                           {incompleteSubtasks.map((s) => (
@@ -420,7 +420,7 @@ export default function FocusModePage() {
 
                 {/* Duration select */}
                 <div className="flex flex-col gap-1.5 select-none">
-                  <label className="text-xs font-bold text-neutral-500 uppercase tracking-wider">Duration Setting</label>
+                  <label className="text-[10px] font-bold text-secondary-text uppercase tracking-wider">Duration Setting</label>
                   <div className="grid grid-cols-4 gap-2">
                     {[
                       { val: 25, label: "25 Min" },
@@ -435,10 +435,10 @@ export default function FocusModePage() {
                           setSelectedDuration(dur.val);
                         }}
                         className={`
-                          py-2.5 text-[10px] font-bold rounded-lg border transition cursor-pointer text-center leading-none
+                          py-2.5 text-[10px] font-bold rounded-lg border transition-all duration-200 cursor-pointer text-center leading-none active:scale-[0.97]
                           ${!isCustomDuration && selectedDuration === dur.val
-                            ? "bg-neutral-950 text-white border-neutral-950 shadow-xs"
-                            : "bg-white border-neutral-200 text-neutral-600 hover:bg-neutral-50"
+                            ? "bg-foreground text-background border-transparent shadow-xs"
+                            : "bg-white border-border-custom text-foreground hover:bg-hover-custom hover:border-neutral-350 active:bg-neutral-100"
                           }
                         `}
                       >
@@ -455,10 +455,10 @@ export default function FocusModePage() {
                         }
                       }}
                       className={`
-                        py-2.5 text-[10px] font-bold rounded-lg border transition cursor-pointer text-center leading-none
+                        py-2.5 text-[10px] font-bold rounded-lg border transition-all duration-200 cursor-pointer text-center leading-none active:scale-[0.97]
                         ${isCustomDuration
-                          ? "bg-neutral-950 text-white border-neutral-950 shadow-xs"
-                          : "bg-white border-neutral-200 text-neutral-600 hover:bg-neutral-50"
+                          ? "bg-foreground text-background border-transparent shadow-xs"
+                          : "bg-white border-border-custom text-foreground hover:bg-hover-custom hover:border-neutral-350 active:bg-neutral-100"
                         }
                       `}
                     >
@@ -467,8 +467,8 @@ export default function FocusModePage() {
                   </div>
 
                   {isCustomDuration && (
-                    <div className="flex items-center gap-2 mt-2 p-3 border border-neutral-200 rounded-lg bg-neutral-50 animate-fadeIn">
-                      <label htmlFor="custom-minutes" className="text-xs font-bold text-neutral-500 uppercase tracking-wider whitespace-nowrap">
+                    <div className="flex items-center gap-2 mt-2 p-3 border border-border-custom rounded-xl bg-secondary-bg animate-fadeIn">
+                      <label htmlFor="custom-minutes" className="text-[10px] font-bold text-secondary-text uppercase tracking-wider whitespace-nowrap">
                         Mins:
                       </label>
                       <input
@@ -485,7 +485,7 @@ export default function FocusModePage() {
                             setSelectedDuration(mins);
                           }
                         }}
-                        className="w-full px-3 py-1.5 text-xs bg-white border border-neutral-200 rounded-md text-neutral-900 outline-none focus:border-neutral-900"
+                        className="w-full px-3 py-1.5 text-xs bg-white border border-border-custom rounded-md text-foreground outline-none transition-all duration-200 hover:border-neutral-350 focus:border-foreground focus:ring-4 focus:ring-black/5"
                         placeholder="Minutes"
                       />
                     </div>
@@ -494,7 +494,7 @@ export default function FocusModePage() {
 
                 <Button
                   variant="primary"
-                  className="w-full py-3 mt-2"
+                  className="w-full py-3 mt-2 shadow-xs"
                   onClick={handleStartSession}
                   disabled={pendingTasks.length === 0 || startSessionMutation.isPending}
                 >
@@ -545,15 +545,16 @@ export default function FocusModePage() {
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0 }}
-              animate={{ opacity: 0.4 }}
+              animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black"
+              className="fixed inset-0 bg-neutral-950/30 backdrop-blur-sm"
             />
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              initial={{ opacity: 0, scale: 0.98, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 15 }}
-              className="relative w-full max-w-sm bg-white border border-neutral-200 rounded-2xl shadow-2xl p-6 text-center space-y-5 z-10"
+              exit={{ opacity: 0, scale: 0.98, y: 10 }}
+              transition={{ type: "spring", bounce: 0.05, duration: 0.25 }}
+              className="relative w-full max-w-sm bg-white border border-border-custom rounded-2xl shadow-2xl p-6 text-center space-y-5 z-10"
             >
               <div className="w-12 h-12 bg-neutral-900 text-white rounded-full flex items-center justify-center mx-auto shadow-md">
                 <CheckCircle2 className="w-6 h-6" />
