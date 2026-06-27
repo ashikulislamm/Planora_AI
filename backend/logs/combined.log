@@ -113,3 +113,7 @@ TypeError: next is not a function
 [2026-06-26 22:39:04:394] [[32minfo[39m]: [32mMongoDB connected! DB HOST: ac-k0b5ibv-shard-00-00.agxa84l.mongodb.net[39m
 [2026-06-26 22:39:04:394] [[32minfo[39m]: [32mServer listening on http://localhost:3000 in development mode[39m
 [2026-06-26 22:39:37:3937] [[32minfo[39m]: [32mReceived SIGINT. Starting graceful shutdown...[39m
+[2026-06-27 08:54:37:5437] [[32minfo[39m]: [32mMongoDB connected! DB HOST: ac-k0b5ibv-shard-00-02.agxa84l.mongodb.net[39m
+[2026-06-27 08:54:37:5437] [[32minfo[39m]: [32mServer listening on http://localhost:3000 in development mode[39m
+[2026-06-27 08:56:15:5615] [[33mwarn[39m]: [33mGET /api/auth/me - 401 client error: Not authorized, access token is missing[39m
+[2026-06-27 08:56:42:5642] [[33mwarn[39m]: [33mGET /api/auth/me - 401 client error: Not authorized, access token is missing[39m

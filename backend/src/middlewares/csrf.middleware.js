@@ -2,6 +2,11 @@ import crypto from 'crypto';
 import ApiError from '../utils/ApiError.js';
 
 export const csrfProtection = (req, res, next) => {
+  // Bypass CSRF protection if request uses token-based authentication (Authorization header)
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+    return next();
+  }
+
   // Safe methods do not require CSRF validation, but they will establish the cookie
   const safeMethods = ['GET', 'HEAD', 'OPTIONS'];
   

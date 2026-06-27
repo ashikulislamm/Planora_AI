@@ -66,8 +66,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (res.success && res.data.user) {
         setUser(res.data.user);
         // Fallback for JWT bearer token
-        if ((res.data as any).token) {
-          localStorage.setItem("token", (res.data as any).token);
+        if ((res.data as any).accessToken) {
+          localStorage.setItem("token", (res.data as any).accessToken);
         }
         router.push("/dashboard");
       }
@@ -85,8 +85,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (res.success && res.data.user) {
         setUser(res.data.user);
         // Fallback for JWT bearer token
-        if ((res.data as any).token) {
-          localStorage.setItem("token", (res.data as any).token);
+        if ((res.data as any).accessToken) {
+          localStorage.setItem("token", (res.data as any).accessToken);
         }
         router.push("/dashboard");
       }
