@@ -115,7 +115,7 @@ export default function FocusModePage() {
 
   // Pomodoro Interval Timer
   useEffect(() => {
-    if (currentSession && currentSession.status === "active" && !isPaused && timeLeft > 0) {
+    if (currentSession && currentSession.status === "active" && !isPaused) {
       timerRef.current = setInterval(() => {
         setTimeLeft((prev) => {
           if (prev <= 1) {
@@ -131,7 +131,7 @@ export default function FocusModePage() {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [currentSession, isPaused, timeLeft]);
+  }, [currentSession, isPaused]);
 
   // Mutations
   const startSessionMutation = useMutation({
@@ -218,18 +218,51 @@ export default function FocusModePage() {
     });
   };
 
+  const playTimerSound = () => {
+    try {
+      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContext) return;
+      
+      const audioCtx = new AudioContext();
+      const now = audioCtx.currentTime;
+
+      // Play a pleasant dual-tone focus completion sound
+      // First note: C5 (523.25 Hz)
+      const osc1 = audioCtx.createOscillator();
+      const gain1 = audioCtx.createGain();
+      osc1.type = "sine";
+      osc1.frequency.setValueAtTime(523.25, now);
+      gain1.gain.setValueAtTime(0, now);
+      gain1.gain.linearRampToValueAtTime(0.25, now + 0.05);
+      gain1.gain.exponentialRampToValueAtTime(0.0001, now + 0.6);
+      osc1.connect(gain1);
+      gain1.connect(audioCtx.destination);
+      osc1.start(now);
+      osc1.stop(now + 0.6);
+
+      // Second note: E5 (659.25 Hz), slightly delayed for a chime effect
+      const osc2 = audioCtx.createOscillator();
+      const gain2 = audioCtx.createGain();
+      osc2.type = "sine";
+      osc2.frequency.setValueAtTime(659.25, now + 0.15);
+      gain2.gain.setValueAtTime(0, now + 0.15);
+      gain2.gain.linearRampToValueAtTime(0.25, now + 0.2);
+      gain2.gain.exponentialRampToValueAtTime(0.0001, now + 0.75);
+      osc2.connect(gain2);
+      gain2.connect(audioCtx.destination);
+      osc2.start(now + 0.15);
+      osc2.stop(now + 0.75);
+    } catch (e) {
+      console.warn("Could not play synthesized sound:", e);
+    }
+  };
+
   const handleTimerComplete = () => {
     // End session as completed on backend
     endSessionMutation.mutate("completed");
     
-    // Play alert sound if available
-    try {
-      const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-200.wav");
-      audio.volume = 0.5;
-      audio.play();
-    } catch (e) {
-      console.warn("Could not play timer sound:", e);
-    }
+    // Play synthesized chime sound
+    playTimerSound();
   };
 
   const handleCancelSession = () => {

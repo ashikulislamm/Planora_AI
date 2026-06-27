@@ -39,9 +39,8 @@ const registerSchema = z
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
 export default function RegisterPage() {
-  const { register: signup } = useAuth();
+  const { register: signup, loading } = useAuth();
   const { success, error } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
   
   // Visibility states
   const [showPassword, setShowPassword] = useState(false);
@@ -119,7 +118,6 @@ export default function RegisterPage() {
   }, [passwordValue]);
 
   const onSubmit = async (data: RegisterFormValues) => {
-    setIsLoading(true);
     try {
       await signup({
         name: data.name,
@@ -130,8 +128,6 @@ export default function RegisterPage() {
     } catch (err: any) {
       const errMsg = err.response?.data?.message || "Registration failed. Email might already be registered.";
       error(errMsg);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -166,7 +162,7 @@ export default function RegisterPage() {
               label="Full Name"
               placeholder="John Doe"
               error={errors.name?.message}
-              disabled={isLoading}
+              disabled={loading}
               className="text-sm"
               {...register("name")}
             />
@@ -176,45 +172,33 @@ export default function RegisterPage() {
               type="email"
               placeholder="name@example.com"
               error={errors.email?.message}
-              disabled={isLoading}
+              disabled={loading}
               className="text-sm"
               {...register("email")}
             />
 
             {/* Password field with toggle visibility */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-semibold text-foreground tracking-tight select-none">
-                Password
-              </label>
-              <div className="relative">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  placeholder="••••••••"
-                  disabled={isLoading}
-                  className={`
-                    w-full pl-3 pr-10 py-2 text-sm bg-white border border-border-custom rounded-md 
-                    placeholder-secondary-text text-foreground outline-none transition
-                    focus:border-foreground focus:ring-1 focus:ring-foreground
-                    disabled:bg-secondary-bg disabled:text-secondary-text disabled:cursor-not-allowed
-                    ${errors.password?.message ? "border-foreground ring-1 ring-foreground" : ""}
-                  `}
-                  {...register("password")}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((prev) => !prev)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-secondary-text hover:text-foreground transition cursor-pointer"
-                  disabled={isLoading}
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-              {errors.password?.message && (
-                <span className="text-xs text-foreground font-medium mt-0.5 block">
-                  {errors.password.message}
-                </span>
-              )}
+            <div className="flex flex-col gap-1.5 text-left">
+              <Input
+                label="Password"
+                type={showPassword ? "text" : "password"}
+                placeholder="••••••••"
+                error={errors.password?.message}
+                disabled={loading}
+                className="text-sm"
+                suffix={
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    className="text-secondary-text hover:text-foreground transition cursor-pointer p-0.5 outline-none focus-visible:ring-1 focus-visible:ring-foreground rounded"
+                    disabled={loading}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                }
+                {...register("password")}
+              />
 
               {/* Password Strength Indicator with colors */}
               {passwordValue && (
@@ -234,39 +218,27 @@ export default function RegisterPage() {
             </div>
 
             {/* Confirm Password field with toggle visibility & matched status */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-semibold text-foreground tracking-tight select-none">
-                Confirm Password
-              </label>
-              <div className="relative">
-                <input
-                  type={showConfirmPassword ? "text" : "password"}
-                  placeholder="••••••••"
-                  disabled={isLoading}
-                  className={`
-                    w-full pl-3 pr-10 py-2 text-sm bg-white border border-border-custom rounded-md 
-                    placeholder-secondary-text text-foreground outline-none transition
-                    focus:border-foreground focus:ring-1 focus:ring-foreground
-                    disabled:bg-secondary-bg disabled:text-secondary-text disabled:cursor-not-allowed
-                    ${errors.confirmPassword?.message ? "border-foreground ring-1 ring-foreground" : ""}
-                  `}
-                  {...register("confirmPassword")}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword((prev) => !prev)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-secondary-text hover:text-foreground transition cursor-pointer"
-                  disabled={isLoading}
-                  aria-label={showConfirmPassword ? "Hide password" : "Show password"}
-                >
-                  {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-              {errors.confirmPassword?.message && (
-                <span className="text-xs text-foreground font-medium mt-0.5 block">
-                  {errors.confirmPassword.message}
-                </span>
-              )}
+            <div className="flex flex-col gap-1.5 text-left">
+              <Input
+                label="Confirm Password"
+                type={showConfirmPassword ? "text" : "password"}
+                placeholder="••••••••"
+                error={errors.confirmPassword?.message}
+                disabled={loading}
+                className="text-sm"
+                suffix={
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword((prev) => !prev)}
+                    className="text-secondary-text hover:text-foreground transition cursor-pointer p-0.5 outline-none focus-visible:ring-1 focus-visible:ring-foreground rounded"
+                    disabled={loading}
+                    aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                }
+                {...register("confirmPassword")}
+              />
 
               {/* Password Matching Status */}
               {showMatchStatus && (
@@ -286,7 +258,7 @@ export default function RegisterPage() {
               )}
             </div>
 
-            <Button type="submit" className="w-full mt-2" isLoading={isLoading}>
+            <Button type="submit" className="w-full mt-2 shadow-xs" isLoading={loading}>
               Create Account
             </Button>
           </form>

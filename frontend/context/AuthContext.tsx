@@ -23,6 +23,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const pathname = usePathname();
 
   const fetchUser = async () => {
+    // Check if token exists in localStorage (client-side only)
+    if (typeof window !== "undefined" && !localStorage.getItem("token")) {
+      setUser(null);
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       const res = await authService.getMe();

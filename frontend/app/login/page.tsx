@@ -26,9 +26,8 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { login, loading } = useAuth();
   const { success, error } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -45,15 +44,12 @@ export default function LoginPage() {
   });
 
   const onSubmit = async (data: LoginFormValues) => {
-    setIsLoading(true);
     try {
       await login(data);
       success("Welcome back! Login successful.");
     } catch (err: any) {
       const errMsg = err.response?.data?.message || "Invalid email or password. Please try again.";
       error(errMsg);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -63,7 +59,7 @@ export default function LoginPage() {
       <Navbar minimal />
 
       {/* Main Centered Content */}
-      <main className="flex-1 flex items-center justify-center py-12 px-4">
+      <main className="flex-grow flex items-center justify-center py-12 px-4">
         <div className="w-full max-w-md bg-white border border-border-custom rounded-xl shadow-sm p-8 space-y-6">
           {/* Logo and Header */}
           <div className="text-center space-y-2">
@@ -85,16 +81,13 @@ export default function LoginPage() {
               type="email"
               placeholder="name@example.com"
               error={errors.email?.message}
-              disabled={isLoading}
+              disabled={loading}
               className="text-sm"
               {...register("email")}
             />
 
-            <div className="flex flex-col gap-1.5 text-left">
-              <div className="flex items-center justify-between">
-                <label className="text-sm font-semibold text-foreground tracking-tight select-none">
-                  Password
-                </label>
+            <div className="flex flex-col gap-1 text-left relative">
+              <div className="absolute right-0 top-0.5 z-10">
                 <button
                   type="button"
                   onClick={() => success("Password reset demonstration modal triggered (UI only).")}
@@ -103,35 +96,26 @@ export default function LoginPage() {
                   Forgot password?
                 </button>
               </div>
-              <div className="relative">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  placeholder="••••••••"
-                  disabled={isLoading}
-                  className={`
-                    w-full pl-3 pr-10 py-2 text-sm bg-white border border-border-custom rounded-md 
-                    placeholder-secondary-text text-foreground outline-none transition
-                    focus:border-foreground focus:ring-1 focus:ring-foreground
-                    disabled:bg-secondary-bg disabled:text-secondary-text disabled:cursor-not-allowed
-                    ${errors.password?.message ? "border-foreground ring-1 ring-foreground" : ""}
-                  `}
-                  {...register("password")}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((prev) => !prev)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-secondary-text hover:text-foreground transition cursor-pointer"
-                  disabled={isLoading}
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-              {errors.password?.message && (
-                <span className="text-xs text-foreground font-medium mt-0.5 block">
-                  {errors.password.message}
-                </span>
-              )}
+              <Input
+                label="Password"
+                type={showPassword ? "text" : "password"}
+                placeholder="••••••••"
+                error={errors.password?.message}
+                disabled={loading}
+                className="text-sm"
+                suffix={
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    className="text-secondary-text hover:text-foreground transition cursor-pointer p-0.5 outline-none focus-visible:ring-1 focus-visible:ring-foreground rounded"
+                    disabled={loading}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                }
+                {...register("password")}
+              />
             </div>
 
             {/* Remember me option */}
@@ -141,7 +125,7 @@ export default function LoginPage() {
                 id="remember"
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
-                disabled={isLoading}
+                disabled={loading}
                 className="w-3.5 h-3.5 accent-foreground rounded border-border-custom text-foreground outline-none cursor-pointer"
               />
               <label htmlFor="remember" className="text-sm text-secondary-text cursor-pointer font-medium">
@@ -149,7 +133,7 @@ export default function LoginPage() {
               </label>
             </div>
 
-            <Button type="submit" className="w-full mt-2" isLoading={isLoading}>
+            <Button type="submit" className="w-full mt-2 shadow-xs" isLoading={loading}>
               Sign In
             </Button>
           </form>

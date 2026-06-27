@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 
@@ -20,24 +21,63 @@ export const Modal: React.FC<ModalProps> = ({
   size = "md",
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
 
-  // Close modal on ESC keypress
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Close modal on ESC keypress & Trap Focus inside Modal
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         onClose();
+      } else if (event.key === "Tab") {
+        if (!modalRef.current) return;
+        const focusable = modalRef.current.querySelectorAll(
+          'a[href], area[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), iframe, object, embed, [tabindex="0"], [contenteditable]'
+        );
+        if (focusable.length === 0) return;
+
+        const first = focusable[0] as HTMLElement;
+        const last = focusable[focusable.length - 1] as HTMLElement;
+
+        if (event.shiftKey) {
+          if (document.activeElement === first) {
+            last.focus();
+            event.preventDefault();
+          }
+        } else {
+          if (document.activeElement === last) {
+            first.focus();
+            event.preventDefault();
+          }
+        }
       }
     };
 
     if (isOpen) {
       document.body.style.overflow = "hidden";
       window.addEventListener("keydown", handleKeyDown);
-    }
 
-    return () => {
-      document.body.style.overflow = "unset";
-      window.removeEventListener("keydown", handleKeyDown);
-    };
+      // Auto-focus the first element inside the modal on open
+      const timer = setTimeout(() => {
+        if (modalRef.current) {
+          const focusable = modalRef.current.querySelectorAll(
+            'input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), a[href]'
+          );
+          if (focusable.length > 0) {
+            (focusable[0] as HTMLElement).focus();
+          }
+        }
+      }, 50);
+
+      return () => {
+        clearTimeout(timer);
+        document.body.style.overflow = "unset";
+        window.removeEventListener("keydown", handleKeyDown);
+      };
+    }
   }, [isOpen, onClose]);
 
   const sizes = {
@@ -47,7 +87,9 @@ export const Modal: React.FC<ModalProps> = ({
     xl: "max-w-2xl",
   };
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
@@ -67,6 +109,9 @@ export const Modal: React.FC<ModalProps> = ({
             exit={{ opacity: 0, scale: 0.98, y: 8 }}
             transition={{ type: "spring", bounce: 0.05, duration: 0.25 }}
             ref={modalRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={title ? "modal-title" : undefined}
             className={`
               relative w-full ${sizes[size]} bg-white border border-border-custom 
               rounded-xl shadow-2xl z-10 overflow-hidden flex flex-col pointer-events-auto
@@ -75,7 +120,10 @@ export const Modal: React.FC<ModalProps> = ({
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4.5 border-b border-border-custom bg-white">
               {title ? (
-                <h3 className="text-sm sm:text-base font-bold text-foreground tracking-tight select-none">
+                <h3 
+                  id="modal-title"
+                  className="text-sm sm:text-base font-bold text-foreground tracking-tight select-none"
+                >
                   {title}
                 </h3>
               ) : (
@@ -97,6 +145,7 @@ export const Modal: React.FC<ModalProps> = ({
           </motion.div>
         </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 };

@@ -108,13 +108,17 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       if (isOpen) {
         if (e.key === "ArrowDown") {
           e.preventDefault();
-          setActiveIndex((prev) => (prev + 1) % filteredActions.length);
+          if (filteredActions.length > 0) {
+            setActiveIndex((prev) => (prev + 1) % filteredActions.length);
+          }
         } else if (e.key === "ArrowUp") {
           e.preventDefault();
-          setActiveIndex((prev) => (prev - 1 + filteredActions.length) % filteredActions.length);
+          if (filteredActions.length > 0) {
+            setActiveIndex((prev) => (prev - 1 + filteredActions.length) % filteredActions.length);
+          }
         } else if (e.key === "Enter") {
           e.preventDefault();
-          if (filteredActions[activeIndex]) {
+          if (filteredActions.length > 0 && filteredActions[activeIndex]) {
             filteredActions[activeIndex].perform();
           }
         } else if (e.key === "Escape") {
