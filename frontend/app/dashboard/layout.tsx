@@ -22,6 +22,9 @@ import { CommandPalette } from "../../components/shared/CommandPalette";
 import { Button } from "../../components/shared/Button";
 import LOGO from "../../public/LOGO.png";
 import Image from "next/image";
+import { CopilotProvider } from "../../components/copilot/CopilotContext";
+import { CopilotButton } from "../../components/copilot/CopilotButton";
+import { CopilotDrawer } from "../../components/copilot/CopilotDrawer";
 
 // Shared context for modals and palette triggers in children
 interface DashboardLayoutContextType {
@@ -111,11 +114,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           setCreateModalOpen,
         }}
       >
-        <div className="min-h-screen flex bg-white text-foreground font-sans selection:bg-neutral-100 selection:text-foreground">
-          <main className="flex-1 overflow-y-auto p-6 md:p-8 bg-white max-w-5xl w-full mx-auto">
-            {children}
-          </main>
-        </div>
+        <CopilotProvider>
+          <div className="min-h-screen flex bg-white text-foreground font-sans selection:bg-neutral-100 selection:text-foreground">
+            <main className="flex-1 overflow-y-auto p-6 md:p-8 bg-white max-w-5xl w-full mx-auto">
+              {children}
+            </main>
+          </div>
+          <CopilotButton />
+          <CopilotDrawer />
+        </CopilotProvider>
       </DashboardLayoutContext.Provider>
     );
   }
@@ -129,7 +136,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         setCreateModalOpen,
       }}
     >
-      <div className="min-h-screen flex bg-white text-foreground font-sans selection:bg-neutral-100 selection:text-foreground">
+      <CopilotProvider>
+        <div className="min-h-screen flex bg-white text-foreground font-sans selection:bg-neutral-100 selection:text-foreground">
         
         {/* Desktop Sidebar (Left Panel) */}
         <aside className="hidden md:flex flex-col w-64 border-r border-border-custom bg-secondary-bg shrink-0">
@@ -344,7 +352,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           onClose={() => setCommandPaletteOpen(false)}
           onCreateTaskTrigger={() => setCreateModalOpen(true)}
         />
+
+        <CopilotButton />
+        <CopilotDrawer />
       </div>
+      </CopilotProvider>
     </DashboardLayoutContext.Provider>
   );
 }

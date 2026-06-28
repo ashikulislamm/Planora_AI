@@ -36,6 +36,8 @@ export const csrfProtection = (req, res, next) => {
     '/api/auth/logout',
     '/api/auth/refresh',
     '/api/health',
+    '/api/ai/test',
+    '/api/ai/health',
     '/',
   ];
 
