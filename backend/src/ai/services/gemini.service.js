@@ -39,9 +39,6 @@ class GeminiService {
     try {
       this.client = new GoogleGenAI({
         apiKey,
-        httpOptions: {
-          timeout: this.timeoutMs,
-        },
       });
       logger.info('Gemini Client initialized successfully.');
     } catch (error) {
@@ -54,11 +51,12 @@ class GeminiService {
    * Generates content from the Gemini model.
    * @param {string} prompt - The user prompt
    * @param {string} systemInstruction - The system instruction/prompt
+   * @param {object} configOverrides - Optional extra config (e.g. responseMimeType)
    * @returns {Promise<string>} The generated text response
    */
-  async generateText(prompt, systemInstruction) {
+  async generateText(prompt, systemInstruction, configOverrides = {}) {
     if (!this.enabled) {
-      throw new ApiError(503, 'AI service is disabled');
+      throw new ApiError(553, 'AI service is disabled');
     }
 
     // Lazy initialization of client
@@ -69,6 +67,10 @@ class GeminiService {
     }
 
     try {
+      if (process.env.NODE_ENV === 'development') {
+        logger.info(`[Gemini SDK Request Configuration] model: ${this.model} | maxOutputTokens: ${this.maxOutputTokens} | temperature: ${this.temperature}`);
+      }
+
       // Define a timeout promise as a safety fallback for hanging connections
       const timeoutPromise = new Promise((_, reject) => {
         setTimeout(() => {
@@ -84,11 +86,18 @@ class GeminiService {
           systemInstruction,
           temperature: this.temperature,
           maxOutputTokens: this.maxOutputTokens,
+          ...configOverrides,
         },
       });
 
       // Race generation against timeout
       const response = await Promise.race([generationPromise, timeoutPromise]);
+
+      if (process.env.NODE_ENV === 'development') {
+        const candidate = response?.candidates?.[0];
+        logger.info(`[Gemini Response Metadata] finishReason: ${candidate?.finishReason} | safetyRatings: ${JSON.stringify(candidate?.safetyRatings)}`);
+        logger.info(`[Gemini Response Text Length]: ${response?.text?.length}`);
+      }
 
       if (!response || !response.text) {
         throw new ApiError(502, 'Received empty response from AI model');

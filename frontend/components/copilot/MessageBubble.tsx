@@ -1,10 +1,12 @@
 "use client";
 
 import React from "react";
-import { Sparkles } from "lucide-react";
+import { Sparkles, BookmarkCheck, XCircle } from "lucide-react";
 import { motion } from "framer-motion";
-import { Message } from "./CopilotContext";
+import { Message, useCopilot } from "./CopilotContext";
 import { useAuth } from "../../context/AuthContext";
+import { TaskPreviewCard } from "./TaskPreviewCard";
+import { Button } from "../shared/Button";
 
 interface MessageBubbleProps {
   message: Message;
@@ -12,6 +14,7 @@ interface MessageBubbleProps {
 
 export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
   const { user } = useAuth();
+  const { setActiveProjectPlan } = useCopilot();
   const isAssistant = message.sender === "assistant";
 
   // Generate initials for avatar
@@ -74,6 +77,79 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
         >
           {message.content}
         </div>
+
+        {/* Task Preview Card (rendered inline for AI task creation) */}
+        {isAssistant && message.type && ["preview", "success", "cancelled"].includes(message.type) && message.previewData && (
+          <div className="mt-2 w-full">
+            <TaskPreviewCard
+              messageId={message.id}
+              previewData={message.previewData}
+              type={message.type as any}
+              createdTask={message.createdTask}
+            />
+          </div>
+        )}
+
+        {/* Project Preview Trigger Card */}
+        {isAssistant && message.type === "project-preview" && message.projectPreviewData && (
+          <div className="mt-2.5 w-full border border-border-custom bg-white shadow-2xs rounded-xl p-4 flex flex-col gap-3">
+            <div className="flex items-center justify-between select-none">
+              <div className="flex items-center gap-1.5 text-[9.5px] font-extrabold text-secondary-text uppercase tracking-widest">
+                <Sparkles className="w-3.5 h-3.5 text-foreground shrink-0" />
+                <span>Project Proposal</span>
+              </div>
+              <span className="text-[10px] font-bold text-foreground bg-secondary-bg px-2.5 py-0.5 border border-border-custom rounded-md">
+                {message.projectPreviewData.summary.totalSubtasks} steps
+              </span>
+            </div>
+            
+            <div className="flex flex-col text-left">
+              <span className="text-xs font-extrabold text-foreground tracking-tight leading-snug">
+                {message.projectPreviewData.parentTask.title}
+              </span>
+              <span className="text-[10.5px] font-medium text-secondary-text leading-relaxed mt-0.5 line-clamp-2">
+                {message.projectPreviewData.parentTask.description}
+              </span>
+            </div>
+            
+            <Button
+              variant="primary"
+              size="sm"
+              className="w-full text-center mt-1 select-none"
+              onClick={() => setActiveProjectPlan(message)}
+            >
+              Open Project Planner
+            </Button>
+          </div>
+        )}
+
+        {/* Project Creation Success Card */}
+        {isAssistant && message.type === "success" && message.projectPreviewData && (
+          <div className="mt-2.5 w-full border border-border-custom bg-secondary-bg rounded-xl p-4 flex gap-2.5 items-start">
+            <div className="w-6.5 h-6.5 rounded-full bg-foreground text-background flex items-center justify-center shrink-0 shadow-3xs">
+              <BookmarkCheck className="w-3.5 h-3.5" />
+            </div>
+            <div className="flex-1 text-left flex flex-col gap-1">
+              <span className="text-xs font-bold text-foreground">Project Created Successfully</span>
+              <span className="text-[11px] font-semibold text-secondary-text tracking-tight line-clamp-1">
+                {message.projectPreviewData.parentTask.title}
+              </span>
+              <span className="text-[10.5px] text-secondary-text font-medium leading-relaxed mt-0.5">
+                AI project breakdown successfully created with all subtasks and timeline schedules.
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Project Plan Cancelled Card */}
+        {isAssistant && message.type === "cancelled" && message.projectPreviewData && (
+          <div className="mt-2.5 w-full border border-border-custom bg-secondary-bg/50 rounded-xl p-4 flex gap-2.5 items-center opacity-70">
+            <XCircle className="w-4 h-4 text-secondary-text shrink-0" />
+            <span className="text-xs font-bold text-secondary-text tracking-tight">
+              Project Plan Cancelled
+            </span>
+          </div>
+        )}
         
         {/* Timestamp */}
         <span

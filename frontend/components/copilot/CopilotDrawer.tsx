@@ -7,6 +7,7 @@ import { CopilotHeader } from "./CopilotHeader";
 import { Conversation } from "./Conversation";
 import { ChatInput } from "./ChatInput";
 import { EmptyState } from "./EmptyState";
+import { ProjectPlannerModal } from "./ProjectPlannerModal";
 
 export const CopilotDrawer: React.FC = () => {
   const { isOpen, setIsOpen, messages } = useCopilot();
@@ -33,41 +34,46 @@ export const CopilotDrawer: React.FC = () => {
   const hasMessages = messages.length > 0;
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <div className="fixed inset-0 z-50 flex justify-end">
-          {/* Backdrop Blur Overlay */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 0.3 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setIsOpen(false)}
-            className="fixed inset-0 bg-black backdrop-blur-xs cursor-pointer"
-          />
+    <>
+      <AnimatePresence>
+        {isOpen && (
+          <div className="fixed inset-0 z-50 flex justify-end">
+            {/* Backdrop Blur Overlay */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.3 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsOpen(false)}
+              className="fixed inset-0 bg-black backdrop-blur-xs cursor-pointer"
+            />
 
-          {/* Sliding Panel */}
-          <motion.aside
-            initial={{ x: "100%" }}
-            animate={{ x: 0 }}
-            exit={{ x: "100%" }}
-            transition={{ type: "spring", damping: 25, stiffness: 220 }}
-            className={`
-              relative h-full bg-white border-l border-border-custom shadow-xl flex flex-col z-10 w-full
-              md:max-w-[440px] sm:max-w-[80vw] max-w-full
-            `}
-          >
-            {/* Header */}
-            <CopilotHeader />
+            {/* Sliding Panel */}
+            <motion.aside
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 220 }}
+              className={`
+                relative h-full bg-white border-l border-border-custom shadow-xl flex flex-col z-10 w-full
+                md:max-w-[440px] sm:max-w-[80vw] max-w-full
+              `}
+            >
+              {/* Header */}
+              <CopilotHeader />
 
-            {/* Conversation list / Empty welcome view */}
-            {hasMessages ? <Conversation /> : <EmptyState />}
+              {/* Conversation list / Empty welcome view */}
+              {hasMessages ? <Conversation /> : <EmptyState />}
 
-            {/* Chat Input */}
-            <ChatInput />
-          </motion.aside>
-        </div>
-      )}
-    </AnimatePresence>
+              {/* Chat Input */}
+              <ChatInput />
+            </motion.aside>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Full-screen AI Project Planner Modal Overlay */}
+      <ProjectPlannerModal />
+    </>
   );
 };
 export default CopilotDrawer;

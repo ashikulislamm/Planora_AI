@@ -76,6 +76,27 @@ const taskSchema = new mongoose.Schema(
           required: [true, 'Subtask title is required'],
           trim: true,
         },
+        description: {
+          type: String,
+          trim: true,
+        },
+        priority: {
+          type: String,
+          enum: ['low', 'medium', 'high', 'critical'],
+          default: 'medium',
+        },
+        estimatedDuration: {
+          type: Number,
+        },
+        order: {
+          type: Number,
+        },
+        dependsOn: [
+          {
+            type: String,
+            trim: true,
+          },
+        ],
         completed: {
           type: Boolean,
           default: false,
