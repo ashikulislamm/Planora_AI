@@ -2,24 +2,54 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowRight, CheckCircle2, Shield, BarChart3, Settings2, Sparkles } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { 
+  ArrowRight, 
+  Shield, 
+  Sparkles,
+  Command,
+  Clock,
+  Search,
+  LayoutDashboard,
+  Play,
+  Pause,
+  X,
+  ChevronDown,
+  Zap
+} from "lucide-react";
 import { Button } from "../components/shared/Button";
 import { useAuth } from "../context/AuthContext";
 import { Navbar } from "../components/layout/Navbar";
 import { Footer } from "../components/layout/Footer";
 
+// FAQ Data
+const FAQS = [
+  {
+    question: "How does the AI Copilot work?",
+    answer: "Planora Copilot is powered by Google GenAI. It analyzes your tasks and goals, breaking them down into actionable sub-tasks, estimating time, and suggesting optimized workflows."
+  },
+  {
+    question: "Can I use Planora entirely for free?",
+    answer: "Yes! Planora is open-source and free to use for individual productivity. You can also self-host it easily using the provided Docker and deployment configurations."
+  },
+  {
+    question: "Is my data secure?",
+    answer: "Absolutely. We use enterprise-grade JWT authentication, strict HTTP-only cookies, and encrypted data storage to ensure your tasks and focus sessions remain strictly private."
+  },
+  {
+    question: "How does the Distraction-Free Focus mode help?",
+    answer: "Our focus mode completely takes over your screen, hiding navigation and notifications. By utilizing the Pomodoro technique, it forces you to dedicate 25 minutes of deep work to a single task."
+  }
+];
+
 export default function LandingPage() {
   const { user } = useAuth();
 
-  // State for interactive demo
-  const [tasks, setTasks] = useState([
-    { id: 1, text: "Define product design systems and grids", completed: true },
-    { id: 2, text: "Synthesize Web Audio API completion chimes", completed: true },
-    { id: 3, text: "Redesign landing page interactive mockups", completed: false },
-    { id: 4, text: "Implement secure HTTP-only cookies in backend", completed: false },
-  ]);
+  // Focus Timer State
+  const [focusModeActive, setFocusModeActive] = useState(false);
   const [timerRunning, setTimerRunning] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(1500); // 25:00
+  const [openFaq, setOpenFaq] = useState<number | null>(0);
 
   // Pomodoro countdown simulation
   useEffect(() => {
@@ -29,7 +59,7 @@ export default function LandingPage() {
         setSecondsLeft((prev) => {
           if (prev <= 1) {
             setTimerRunning(false);
-            // Simulate playing the synthesizer chime sound inside browser on complete
+            // Play chime sound
             try {
               const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
               if (AudioContext) {
@@ -38,7 +68,7 @@ export default function LandingPage() {
                 const osc = ctx.createOscillator();
                 const gain = ctx.createGain();
                 osc.type = "sine";
-                osc.frequency.setValueAtTime(523.25, now); // C5
+                osc.frequency.setValueAtTime(523.25, now);
                 gain.gain.setValueAtTime(0, now);
                 gain.gain.linearRampToValueAtTime(0.2, now + 0.05);
                 gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
@@ -57,282 +87,385 @@ export default function LandingPage() {
     return () => clearInterval(interval);
   }, [timerRunning]);
 
-  const toggleTask = (id: number) => {
-    setTasks((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t))
-    );
-  };
-
-  const completedTasks = tasks.filter((t) => t.completed).length;
-  const progressPercent = Math.round((completedTasks / tasks.length) * 100);
-
   const formatTimer = (secs: number) => {
     const m = Math.floor(secs / 60).toString().padStart(2, "0");
     const s = (secs % 60).toString().padStart(2, "0");
     return `${m}:${s}`;
   };
 
-  const features = [
-    {
-      icon: CheckCircle2,
-      title: "Task Management",
-      description: "Organize, tag, and sort your tasks with custom statuses. Keep your focus where it belongs."
-    },
-    {
-      icon: BarChart3,
-      title: "Progress Tracking",
-      description: "Analyze your completion rates with productivity widgets and active progress analytics."
-    },
-    {
-      icon: Settings2,
-      title: "Account Management",
-      description: "Manage your profile information, password security, and options through clean forms."
-    },
-    {
-      icon: Shield,
-      title: "Secure Authentication",
-      description: "Rest assured with HTTP-only, secure, strict cookie authentication keeping your sessions safe."
-    }
-  ];
+  const handleStartFocus = () => {
+    setFocusModeActive(true);
+    setTimerRunning(true);
+  };
+
+  const handleExitFocus = () => {
+    setFocusModeActive(false);
+    setTimerRunning(false);
+  };
 
   return (
-    <div className="min-h-full flex flex-col bg-white text-foreground selection:bg-neutral-100 selection:text-foreground">
-      {/* Navbar */}
+    <div className="min-h-full flex flex-col bg-white text-foreground selection:bg-neutral-100 selection:text-foreground font-sans">
+      
+      {/* Fullscreen Distraction-Free Focus Overlay */}
+      <AnimatePresence>
+        {focusModeActive && (
+          <motion.div 
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 50 }}
+            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+            className="fixed inset-0 z-[100] bg-neutral-950 text-white flex flex-col items-center justify-center overflow-hidden"
+          >
+            {/* Ambient Dark Glow */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-neutral-900 rounded-full blur-[150px] opacity-50 pointer-events-none" />
+
+            <button 
+              onClick={handleExitFocus}
+              className="absolute top-8 left-8 md:top-12 md:left-12 flex items-center gap-2 text-neutral-400 hover:text-white transition-colors"
+            >
+              <X className="w-6 h-6" />
+              <span className="text-sm font-bold tracking-widest uppercase hidden md:block">Exit Focus Mode</span>
+            </button>
+
+            <div className="relative z-10 flex flex-col items-center mt-[-10vh]">
+              <span className="text-neutral-500 font-bold tracking-widest uppercase mb-12 text-sm">Deep Work Session</span>
+              
+              <div className="relative w-[300px] h-[300px] md:w-[400px] md:h-[400px] flex items-center justify-center mb-16">
+                <svg viewBox="0 0 100 100" className="absolute w-full h-full transform -rotate-90 pointer-events-none">
+                  <circle cx="50" cy="50" r="45" className="stroke-neutral-800 stroke-[2]" fill="transparent" />
+                  <circle 
+                    cx="50" 
+                    cy="50" 
+                    r="45" 
+                    className="stroke-white stroke-[2] transition-all duration-1000 ease-linear" 
+                    strokeDasharray={283}
+                    strokeDashoffset={283 * (1 - secondsLeft / 1500)}
+                    strokeLinecap="round"
+                    fill="transparent" 
+                  />
+                </svg>
+
+                <div className="text-7xl md:text-9xl font-black font-mono tracking-tighter text-white z-10 select-none">
+                  {formatTimer(secondsLeft)}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-6 z-10">
+                <button 
+                  onClick={() => setTimerRunning(!timerRunning)}
+                  className="flex items-center justify-center w-20 h-20 rounded-full bg-white text-neutral-950 hover:scale-105 transition-transform shadow-[0_0_40px_rgba(255,255,255,0.2)] focus:outline-none"
+                >
+                  {timerRunning ? <Pause className="w-8 h-8 fill-neutral-950" /> : <Play className="w-8 h-8 fill-neutral-950 ml-1" />}
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <Navbar />
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden flex-1 flex flex-col justify-center items-center px-6 py-20 md:py-32 text-center max-w-7xl mx-auto w-full">
-        {/* Background Ambient Glows */}
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[550px] h-[550px] bg-neutral-200/40 rounded-full blur-[110px] pointer-events-none z-0" />
-        <div className="absolute top-1/3 left-1/3 w-[350px] h-[350px] bg-zinc-150/50 rounded-full blur-[80px] pointer-events-none z-0" />
+      <section className="relative overflow-hidden flex-1 flex flex-col justify-center items-center px-6 py-24 md:py-32 text-center w-full">
+        {/* Modern ambient background */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-40 pointer-events-none z-0" />
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-neutral-200/40 rounded-full blur-[120px] pointer-events-none z-0" />
         
-        <div className="relative z-10 flex flex-col items-center">
-          <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-border-custom bg-secondary-bg text-xs font-semibold text-secondary-text tracking-wide uppercase mb-8 animate-fade-in select-none">
-            <Sparkles className="w-3.5 h-3.5 text-foreground animate-pulse" />
-            <span>Introducing Planora Task Manager</span>
-          </div>
+        <div className="relative z-10 flex flex-col items-center max-w-4xl mx-auto mt-10">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-border-custom bg-white/50 backdrop-blur-sm shadow-3xs text-xs font-bold tracking-wide uppercase mb-8"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-foreground" />
+            <span>Planora 2.0 is Here</span>
+          </motion.div>
 
-          <h1 className="text-4xl sm:text-6xl md:text-[80px] font-black tracking-tight leading-[1.03] mb-8 font-sans">
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-neutral-950 via-neutral-800 to-neutral-500">
-              Organize Tasks.
-            </span>
-            <br />
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-neutral-900 to-neutral-650">
-              Stay Focused.
-            </span>
-            <br />
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-neutral-800 to-neutral-400">
-              Get Things Done.
-            </span>
-          </h1>
+          <motion.h1 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="text-5xl sm:text-6xl md:text-[80px] font-black tracking-tighter leading-[1.05] mb-8"
+          >
+            Your Intelligent <br className="hidden sm:block" />
+            <span className="text-secondary-text">Task & Focus</span> Workspace.
+          </motion.h1>
 
-          <p className="text-sm sm:text-base text-secondary-text max-w-xl mb-10 leading-relaxed">
-            A clean and modern task manager built to help you stay productive every day. Grayscale aesthetics, integrated focus states, and fluid interface details built for creators.
-          </p>
+          <motion.p 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="text-base sm:text-lg text-secondary-text max-w-2xl mb-10 leading-relaxed font-medium"
+          >
+            Streamline your workflow, eliminate distractions, and achieve more with AI-driven task management. Designed for deep work.
+          </motion.p>
 
-          <div className="flex flex-col sm:flex-row items-center gap-3.5 w-full sm:w-auto">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+            className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto"
+          >
             <Link href={user ? "/dashboard" : "/register"} className="w-full sm:w-auto">
-              <Button variant="primary" size="lg" className="w-full sm:w-auto group relative overflow-hidden transition-all duration-300 hover:shadow-[0_0_25px_rgba(9,9,11,0.12)]">
-                Get Started for Free
-                <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-0.5 transition-transform" />
+              <Button variant="primary" size="lg" className="w-full sm:w-auto text-sm h-12 px-8 rounded-full shadow-lg shadow-neutral-900/10 hover:shadow-xl hover:shadow-neutral-900/15 hover:-translate-y-0.5 transition-all duration-300">
+                Start for Free
+                <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </Link>
-            <a href="#demo" className="w-full sm:w-auto">
-              <Button variant="outline" size="lg" className="w-full sm:w-auto border-neutral-300 hover:border-foreground hover:bg-neutral-50 transition-all">
-                View Interactive Demo
+            <a href="#features" className="w-full sm:w-auto">
+              <Button variant="outline" size="lg" className="w-full sm:w-auto text-sm h-12 px-8 rounded-full border-border-custom hover:bg-neutral-50 transition-all">
+                Explore Features
               </Button>
             </a>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Social Proof Section */}
+      <section className="py-10 border-y border-border-custom bg-secondary-bg overflow-hidden flex flex-col items-center">
+        <p className="text-xs font-bold text-secondary-text uppercase tracking-widest mb-6">Trusted by Productivity Enthusiasts Worldwide</p>
+        <div className="flex flex-wrap justify-center gap-8 md:gap-16 opacity-40 grayscale">
+          {/* Mock Logos using text for simplicity */}
+          <span className="text-xl font-black font-serif">Acme Corp</span>
+          <span className="text-xl font-black tracking-tight">Vercel</span>
+          <span className="text-xl font-black italic">Next.js</span>
+          <span className="text-xl font-black">Google Cloud</span>
+          <span className="text-xl font-black tracking-widest">MONGODB</span>
+        </div>
+      </section>
+
+      {/* How It Works */}
+      <section className="py-24 px-6 relative bg-white">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center max-w-2xl mx-auto mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-4">
+              A workflow designed for execution.
+            </h2>
+            <p className="text-sm text-secondary-text font-medium">
+              We stripped away the complexity so you can focus on what actually matters: getting things done.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+            {[
+              { title: "Capture Thoughts", desc: "Dump everything into your inbox. Use Ctrl+K from anywhere to add tasks instantly.", icon: Search },
+              { title: "AI Organization", desc: "Let Copilot break down massive goals into bite-sized actionable steps automatically.", icon: Sparkles },
+              { title: "Deep Execution", desc: "Enter Focus Mode to block out the world. Work in 25 minute bursts of uninterrupted flow.", icon: Zap }
+            ].map((step, i) => (
+              <div key={i} className="flex flex-col items-center text-center group">
+                <div className="w-16 h-16 rounded-2xl bg-secondary-bg border border-border-custom flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-foreground group-hover:text-white transition-all duration-300">
+                  <step.icon className="w-6 h-6" />
+                </div>
+                <h3 className="text-lg font-bold mb-3">{step.title}</h3>
+                <p className="text-sm text-secondary-text leading-relaxed font-medium max-w-xs">{step.desc}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Live Interactive Mockup Section */}
-      <section id="demo" className="relative max-w-5xl mx-auto px-6 pb-24 z-10 w-full">
-        <div className="relative rounded-2xl border border-border-custom bg-white shadow-2xl p-6 sm:p-8 overflow-hidden group">
-          {/* Top header bar */}
-          <div className="flex items-center justify-between border-b border-border-custom pb-4 mb-6">
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-neutral-200" />
-              <span className="w-3 h-3 rounded-full bg-neutral-200" />
-              <span className="w-3 h-3 rounded-full bg-neutral-200" />
-              <span className="text-xs text-secondary-text font-medium ml-2 font-mono">Planora Your Daily Task Manager</span>
-            </div>
+      {/* Bento Grid Features Section */}
+      <section id="features" className="py-24 px-6 relative bg-secondary-bg border-t border-border-custom">
+        <div className="max-w-6xl mx-auto">
+          <div className="mb-16 text-center max-w-2xl mx-auto">
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-4">
+              Everything you need. Nothing you don't.
+            </h2>
+            <p className="text-sm text-secondary-text font-medium">
+              A carefully curated set of tools designed to maximize your execution velocity.
+            </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Task list Column (2 cols) */}
-            <div className="md:col-span-2 space-y-4">
-              <div className="flex justify-between items-center mb-1">
-                <h3 className="text-xs font-bold text-foreground uppercase tracking-wider">Workspace Tasks</h3>
-                <span className="text-xs text-secondary-text font-semibold">
-                  {completedTasks} of {tasks.length} Completed ({progressPercent}%)
-                </span>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-[320px]">
+            
+            {/* AI Copilot (Large Feature) */}
+            <div className="md:col-span-2 row-span-1 bg-white border border-border-custom rounded-3xl p-8 relative overflow-hidden group hover:border-neutral-300 transition-colors shadow-sm">
+              <div className="relative z-10 w-full h-full flex flex-col justify-between">
+                <div className="max-w-md">
+                  <div className="w-10 h-10 rounded-xl bg-neutral-100 border border-neutral-200 flex items-center justify-center mb-6">
+                    <Sparkles className="w-5 h-5 text-foreground" />
+                  </div>
+                  <h3 className="text-2xl font-bold tracking-tight mb-2">Planora Copilot</h3>
+                  <p className="text-sm text-secondary-text leading-relaxed font-medium">
+                    Powered by Google GenAI. Instantly break down complex tasks, generate actionable sub-items, and get workflow insights directly in your workspace.
+                  </p>
+                </div>
+                
+                {/* Mock UI Element */}
+                <div className="absolute -right-4 -bottom-4 w-72 md:w-[350px] bg-secondary-bg border border-border-custom rounded-2xl p-4 shadow-xl transform group-hover:-translate-y-2 group-hover:-translate-x-2 transition-transform duration-500">
+                  <div className="flex gap-3 items-end mb-3">
+                    <div className="bg-foreground text-white text-xs font-medium p-3 rounded-2xl rounded-bl-none max-w-[80%] shadow-sm">
+                      How can I break down the "Landing Page Redesign" task?
+                    </div>
+                  </div>
+                  <div className="flex gap-3 items-end">
+                    <div className="w-6 h-6 rounded bg-neutral-200 flex-shrink-0 flex items-center justify-center shadow-sm">
+                      <Sparkles className="w-3 h-3 text-secondary-text" />
+                    </div>
+                    <div className="bg-white border border-border-custom text-foreground text-xs p-3 rounded-2xl rounded-bl-none max-w-[85%] shadow-sm">
+                      <p className="font-bold mb-1">Here is a suggested breakdown:</p>
+                      <ul className="list-disc pl-4 space-y-1 text-secondary-text font-medium">
+                        <li>Design wireframes</li>
+                        <li>Implement Bento UI</li>
+                        <li>Add Framer Motion</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Deep Focus Space - Interactive Mode Trigger */}
+            <div className="md:col-span-1 row-span-1 bg-white border border-border-custom rounded-3xl p-8 relative overflow-hidden group hover:border-neutral-300 transition-colors shadow-sm flex flex-col justify-between items-center text-center">
+              <div>
+                <div className="w-10 h-10 rounded-xl bg-neutral-100 border border-neutral-200 flex items-center justify-center mb-4 mx-auto">
+                  <Clock className="w-5 h-5 text-foreground" />
+                </div>
+                <h3 className="text-xl font-bold tracking-tight mb-2">Deep Focus Space</h3>
+                <p className="text-sm text-secondary-text leading-relaxed font-medium z-10 relative">
+                  Immerse yourself completely. No distractions.
+                </p>
               </div>
               
-              {/* Progress bar */}
-              <div className="w-full h-2 bg-neutral-100 rounded-full overflow-hidden mb-4">
+              <div className="relative mt-auto w-full flex items-center justify-center pt-2 z-10">
                 <div 
-                  className="h-full bg-foreground transition-all duration-500 ease-out" 
-                  style={{ width: `${progressPercent}%` }}
-                />
-              </div>
-
-              {/* Tasks List */}
-              <div className="space-y-2">
-                {tasks.map((task) => (
-                  <div 
-                    key={task.id}
-                    onClick={() => toggleTask(task.id)}
-                    className={`flex items-center justify-between p-3.5 rounded-lg border transition-all duration-200 cursor-pointer ${
-                      task.completed 
-                        ? "bg-secondary-bg border-neutral-200/80 opacity-70" 
-                        : "bg-white border-neutral-200 hover:border-neutral-350 hover:shadow-3xs"
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`w-4.5 h-4.5 rounded border flex items-center justify-center transition-all ${
-                        task.completed 
-                          ? "bg-foreground border-foreground text-white" 
-                          : "border-neutral-300"
-                      }`}>
-                        {task.completed && <CheckCircle2 className="w-3 h-3 stroke-[3] text-white" />}
-                      </div>
-                      <span className={`text-xs font-semibold ${task.completed ? "line-through text-secondary-text" : "text-foreground"}`}>
-                        {task.text}
-                      </span>
+                  onClick={handleStartFocus}
+                  className="relative w-[120px] h-[120px] flex items-center justify-center group-hover:scale-105 transition-transform duration-500 cursor-pointer" 
+                >
+                  <div className="absolute inset-0 rounded-full bg-neutral-100 group-hover:bg-neutral-200 transition-colors flex items-center justify-center shadow-inner">
+                    <div className="flex flex-col items-center">
+                      <Play className="w-8 h-8 text-foreground ml-1 mb-1" />
+                      <span className="text-[10px] font-bold text-foreground tracking-widest uppercase">Start</span>
                     </div>
-                    <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-semibold uppercase tracking-wider ${
-                      task.completed 
-                        ? "bg-neutral-200 text-neutral-600" 
-                        : "bg-zinc-100 text-foreground"
-                    }`}>
-                      {task.completed ? "Done" : "Todo"}
-                    </span>
+                  </div>
+                  <svg className="absolute w-full h-full transform -rotate-90 pointer-events-none">
+                    <circle cx="60" cy="60" r="58" className="stroke-foreground stroke-[3] opacity-30" fill="transparent" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            {/* Command Palette */}
+            <div className="md:col-span-1 row-span-1 bg-white border border-border-custom rounded-3xl p-8 relative overflow-hidden group hover:border-neutral-300 transition-colors shadow-sm flex flex-col">
+              <div className="w-10 h-10 rounded-xl bg-neutral-100 border border-neutral-200 flex items-center justify-center mb-6">
+                <Command className="w-5 h-5 text-foreground" />
+              </div>
+              <h3 className="text-xl font-bold tracking-tight mb-2">Command Palette</h3>
+              <p className="text-sm text-secondary-text leading-relaxed font-medium">
+                Navigate your entire workspace instantly with <kbd className="font-mono font-bold bg-neutral-100 px-1 py-0.5 rounded text-xs border border-neutral-200">Ctrl+K</kbd>.
+              </p>
+              
+              <div className="mt-auto relative w-full h-12 bg-secondary-bg border border-border-custom rounded-xl flex items-center px-4 shadow-inner group-hover:bg-white group-hover:border-neutral-300 transition-colors">
+                <Search className="w-4 h-4 text-secondary-text mr-2" />
+                <span className="text-xs font-semibold text-neutral-400">Search tasks...</span>
+                <div className="ml-auto bg-white border border-border-custom px-1.5 py-0.5 rounded flex items-center text-[10px] font-bold text-neutral-500 shadow-3xs">
+                  Esc
+                </div>
+              </div>
+            </div>
+
+            {/* Task Management & Analytics */}
+            <div className="md:col-span-2 row-span-1 bg-white border border-border-custom rounded-3xl p-8 relative overflow-hidden group hover:border-neutral-300 transition-colors shadow-sm">
+              <div className="w-10 h-10 rounded-xl bg-neutral-100 border border-neutral-200 flex items-center justify-center mb-6">
+                <LayoutDashboard className="w-5 h-5 text-foreground" />
+              </div>
+              <h3 className="text-2xl font-bold tracking-tight mb-2">Beautiful Analytics</h3>
+              <p className="text-sm text-secondary-text leading-relaxed max-w-md mb-8 font-medium">
+                Visualize your execution speed, track weekly activity streaks, and optimize your productivity patterns.
+              </p>
+              
+              {/* Mock Bar Chart */}
+              <div className="absolute right-0 bottom-0 w-[60%] h-[140px] flex items-end gap-2 px-8 opacity-70 group-hover:opacity-100 transition-opacity">
+                {[40, 70, 45, 90, 65, 80, 100].map((h, i) => (
+                  <div key={i} className="flex-1 bg-neutral-100 rounded-t-md relative overflow-hidden" style={{ height: `${h}%` }}>
+                    <div 
+                      className="absolute bottom-0 left-0 w-full bg-foreground rounded-t-md transition-all duration-700 ease-out" 
+                      style={{ height: h > 60 ? '100%' : '0%' }} 
+                    />
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Pomodoro Timer Column (1 col) */}
-            <div className="p-6 bg-secondary-bg border border-border-custom rounded-xl flex flex-col justify-between items-center text-center">
-              <div className="w-full">
-                <span className="text-[10px] font-bold text-secondary-text tracking-widest uppercase mb-1 block">Focus Session</span>
-                <h4 className="text-xs font-bold text-foreground mb-4 truncate max-w-full">Dashboard Polish</h4>
-                
-                {/* Visual Timer ring */}
-                <div className="relative w-28 h-28 mx-auto flex items-center justify-center mb-4">
-                  <svg className="w-full h-full transform -rotate-90">
-                    <circle cx="56" cy="56" r="48" className="stroke-neutral-200 stroke-[3]" fill="transparent" />
-                    <circle 
-                      cx="56" 
-                      cy="56" 
-                      r="48" 
-                      className="stroke-foreground stroke-[4] transition-all duration-1000" 
-                      strokeDasharray={2 * Math.PI * 48}
-                      strokeDashoffset={2 * Math.PI * 48 * (1 - secondsLeft / 1500)}
-                      fill="transparent" 
-                    />
-                  </svg>
-                  <div className="absolute text-xl font-bold font-mono tracking-tight text-foreground select-none">
-                    {formatTimer(secondsLeft)}
-                  </div>
-                </div>
-              </div>
+          </div>
+        </div>
+      </section>
 
-              <div className="w-full space-y-2">
-                <Button 
-                  onClick={() => setTimerRunning(!timerRunning)} 
-                  variant={timerRunning ? "outline" : "primary"} 
-                  size="sm" 
-                  className="w-full justify-center text-xs font-bold"
-                >
-                  {timerRunning ? "Pause Timer" : "Start Focus Timer"}
-                </Button>
+      {/* FAQ Section */}
+      <section className="py-24 px-6 bg-white border-t border-border-custom">
+        <div className="max-w-3xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-4">
+              Frequently Asked Questions
+            </h2>
+            <p className="text-sm text-secondary-text font-medium">
+              Everything you need to know about the product and billing.
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            {FAQS.map((faq, index) => (
+              <div 
+                key={index} 
+                className="border border-border-custom rounded-2xl bg-white overflow-hidden transition-all duration-300 shadow-sm hover:border-neutral-300"
+              >
                 <button 
-                  onClick={() => {
-                    setTimerRunning(false);
-                    setSecondsLeft(1500);
-                  }}
-                  className="text-[10px] text-secondary-text font-bold hover:text-foreground transition underline cursor-pointer select-none"
+                  onClick={() => setOpenFaq(openFaq === index ? null : index)}
+                  className="w-full px-6 py-5 flex items-center justify-between text-left focus:outline-none cursor-pointer"
                 >
-                  Reset Timer
+                  <span className="font-bold text-foreground text-sm">{faq.question}</span>
+                  <ChevronDown className={`w-5 h-5 text-secondary-text transition-transform duration-300 ${openFaq === index ? 'rotate-180' : ''}`} />
                 </button>
+                <AnimatePresence>
+                  {openFaq === index && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.3, ease: "easeInOut" }}
+                    >
+                      <div className="px-6 pb-6 text-sm text-secondary-text leading-relaxed border-t border-neutral-100 pt-4 font-medium">
+                        {faq.answer}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Modern Dark CTA Section */}
+      <section className="py-24 px-6 bg-white border-t border-border-custom relative overflow-hidden">
+        <div className="absolute inset-0 bg-neutral-[2%] pointer-events-none" />
+        
+        <div className="max-w-5xl mx-auto bg-neutral-950 rounded-[2.5rem] p-12 md:p-20 text-center relative overflow-hidden shadow-2xl">
+          <div className="absolute -top-40 -right-40 w-96 h-96 bg-neutral-800 rounded-full blur-[100px] opacity-40 pointer-events-none" />
+          <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-neutral-900 rounded-full blur-[100px] opacity-60 pointer-events-none" />
+          
+          <div className="relative z-10 flex flex-col items-center">
+            <Shield className="w-12 h-12 text-neutral-400 mb-6" />
+            <h2 className="text-3xl md:text-5xl font-black tracking-tighter text-white mb-6 leading-[1.1]">
+              Enterprise-grade security. <br className="hidden md:block" />
+              Built for your peace of mind.
+            </h2>
+            <p className="text-base text-neutral-400 max-w-xl mx-auto mb-10 leading-relaxed font-medium">
+              Join thousands of professionals organizing their workflow in a secure, encrypted, and blazing fast environment.
+            </p>
+            
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full sm:w-auto">
+              <Link href={user ? "/dashboard" : "/register"} className="w-full sm:w-auto">
+                <Button variant="primary" size="lg" className="w-full sm:w-auto bg-white text-neutral-950 hover:bg-neutral-200 h-12 px-8 rounded-full font-bold shadow-lg transition-transform hover:-translate-y-0.5">
+                  Create Free Account
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Feature Section */}
-      <section id="features" className="border-t border-border-custom bg-secondary-bg py-24 px-6 relative">
-        <div className="max-w-7xl mx-auto">
-          <div className="max-w-xl mb-16">
-            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground mb-4">
-              Designed for high performance execution.
-            </h2>
-            <p className="text-xs sm:text-sm text-secondary-text leading-relaxed">
-              Every detail is meticulously polished to reduce visual noise and speed up interactions, helping you focus entirely on executing your goals.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {features.map((feature, i) => {
-              const Icon = feature.icon;
-              return (
-                <div 
-                  key={i} 
-                  className="p-6 bg-white border border-border-custom rounded-xl transition-all duration-300 hover:-translate-y-1.5 hover:shadow-lg hover:border-neutral-400 flex flex-col group/card relative overflow-hidden"
-                >
-                  <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-transparent via-neutral-300 to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity duration-300" />
-                  
-                  <div className="w-9 h-9 rounded-lg border border-border-custom bg-secondary-bg flex items-center justify-center text-foreground mb-5 group-hover/card:bg-neutral-900 group-hover/card:text-white transition-all duration-300">
-                    <Icon className="w-4.5 h-4.5" />
-                  </div>
-                  <h3 className="text-sm font-semibold text-foreground tracking-tight mb-2">
-                    {feature.title}
-                  </h3>
-                  <p className="text-xs text-secondary-text leading-relaxed">
-                    {feature.description}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* Call to Action Section */}
-      <section className="border-t border-border-custom bg-white py-24 px-6 relative overflow-hidden">
-        {/* Glow behind CTA */}
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-neutral-100 rounded-full blur-[100px] pointer-events-none" />
-        
-        <div className="max-w-4xl mx-auto rounded-3xl bg-neutral-950 border border-neutral-800 p-10 md:p-16 text-center text-white relative overflow-hidden group shadow-2xl">
-          <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.05),transparent)] pointer-events-none" />
-          <div className="absolute -top-24 -left-24 w-48 h-48 bg-zinc-800 rounded-full blur-[80px] opacity-40 pointer-events-none" />
-          
-          <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-white mb-4">
-            Be the architect of your own focus.
-          </h2>
-          <p className="text-xs sm:text-sm text-neutral-400 max-w-xl mx-auto mb-8 leading-relaxed">
-            Join users globally who manage task execution and Pomodoro focus routines from a single minimalist workspace.
-          </p>
-          
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full sm:w-auto">
-            <Link href={user ? "/dashboard" : "/register"} className="w-full sm:w-auto">
-              <Button variant="primary" size="lg" className="w-full sm:w-auto bg-white text-neutral-950 hover:bg-neutral-100 hover:shadow-md transition-all font-bold">
-                Get Started Now
-              </Button>
-            </Link>
-            <Link href="/login" className="w-full sm:w-auto">
-              <Button variant="outline" size="lg" className="w-full sm:w-auto border-neutral-800 text-white hover:bg-neutral-900 transition-all">
-                Log In to Account
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
       <Footer />
     </div>
   );
