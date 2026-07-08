@@ -1,126 +1,551 @@
 {
-	"info": {
-		"_postman_id": "c1f2b3a4-5678-90ab-cdef-1234567890ab",
-		"name": "Planora_AI API Test Suite",
-		"description": "Comprehensive API tests covering positive, negative, and boundary scenarios for all backend endpoints.",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-	},
-	"item": [
-		{
-			"name": "Authentication",
-			"item": [
-				{
-					"name": "Register User - Positive",
-					"request": {
-						"method": "POST",
-						"header": [{"key": "Content-Type", "value": "application/json"}],
-						"url": {"raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth", "register"]},
-						"body": {"mode": "raw", "raw": "{\n  \"name\": \"Test QA\",\n  \"email\": \"testqa1@planora.com\",\n  \"password\": \"SecurePass123!\"\n}"}
-					}
-				},
-				{
-					"name": "Login User - Positive",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var jsonData = pm.response.json();",
-									"pm.environment.set(\"token\", jsonData.token);"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [{"key": "Content-Type", "value": "application/json"}],
-						"url": {"raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"]},
-						"body": {"mode": "raw", "raw": "{\n  \"email\": \"testqa1@planora.com\",\n  \"password\": \"SecurePass123!\"\n}"}
-					}
-				},
-				{
-					"name": "Get Me - Auth Required",
-					"request": {
-						"method": "GET",
-						"header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
-						"url": {"raw": "{{baseUrl}}/auth/me", "host": ["{{baseUrl}}"], "path": ["auth", "me"]}
-					}
-				}
-			]
-		},
-		{
-			"name": "Tasks",
-			"item": [
-				{
-					"name": "Create Task - Positive",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var jsonData = pm.response.json();",
-									"pm.environment.set(\"taskId\", jsonData.data._id);"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{"key": "Authorization", "value": "Bearer {{token}}"},
-							{"key": "Content-Type", "value": "application/json"}
-						],
-						"url": {"raw": "{{baseUrl}}/tasks", "host": ["{{baseUrl}}"], "path": ["tasks"]},
-						"body": {"mode": "raw", "raw": "{\n  \"title\": \"QA Automation Setup\",\n  \"description\": \"Write Postman collections\"\n}"}
-					}
-				},
-				{
-					"name": "Create Task - Missing Title (Negative)",
-					"request": {
-						"method": "POST",
-						"header": [
-							{"key": "Authorization", "value": "Bearer {{token}}"},
-							{"key": "Content-Type", "value": "application/json"}
-						],
-						"url": {"raw": "{{baseUrl}}/tasks", "host": ["{{baseUrl}}"], "path": ["tasks"]},
-						"body": {"mode": "raw", "raw": "{\n  \"description\": \"No title provided\"\n}"}
-					}
-				},
-				{
-					"name": "Get All Tasks",
-					"request": {
-						"method": "GET",
-						"header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
-						"url": {"raw": "{{baseUrl}}/tasks", "host": ["{{baseUrl}}"], "path": ["tasks"]}
-					}
-				}
-			]
-		},
-		{
-			"name": "Focus Space",
-			"item": [
-				{
-					"name": "Start Focus Session",
-					"request": {
-						"method": "POST",
-						"header": [
-							{"key": "Authorization", "value": "Bearer {{token}}"},
-							{"key": "Content-Type", "value": "application/json"}
-						],
-						"url": {"raw": "{{baseUrl}}/focus/start", "host": ["{{baseUrl}}"], "path": ["focus", "start"]},
-						"body": {"mode": "raw", "raw": "{}"}
-					}
-				}
-			]
-		}
-	],
-	"variable": [
-		{
-			"key": "baseUrl",
-			"value": "http://localhost:5000/api",
-			"type": "string"
-		}
-	]
+  "info": {
+    "_postman_id": "73865ac7-d8d2-469f-b977-c0f2085984d0",
+    "name": "Planora_AI",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "40350202"
+  },
+  "item": [
+    {
+      "name": "AUTH",
+      "item": [
+        {
+          "name": "LOGIN",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"email\": \"user@example.com\",\r\n  \"password\": \"securepassword123\" \r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/auth/login",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "REGISTER",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"name\": \"John Doe\", \r\n  \"email\": \"user@example.com\",\r\n  \"password\": \"securepassword123\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/auth/register",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GETCurrentUser",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/auth/me",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "auth",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{json_web_token_0c06}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"name\": \"New Name\",     // Optional\r\n  \"email\": \"new@example.com\" // Optional\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/auth/profile",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "auth",
+                "profile"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Password",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{json_web_token_0c06}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"currentPassword\": \"securepassword123\", \r\n  \"newPassword\": \"hedarpassword12345\" // String, min 6 chars\r\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/auth/password",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "auth",
+                "password"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Task",
+      "item": [
+        {
+          "name": "Create TASK",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{json_web_token_0c06}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"title\": \"Finish Report\",    // Required, 1-100 chars\r\n  \"description\": \"Annual report details\", // Required\r\n  \"status\": \"todo\",            // Optional\r\n  \"priority\": \"high\",          // Optional\r\n  \"category\": \"work\",          // Optional\r\n  \"dueDate\": \"2024-12-31\",     // Optional (ISO string)\r\n  \"isRecurring\": false         // Optional\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/tasks",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "tasks"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET TASK",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/tasks",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "tasks"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET TASK BY ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/tasks/6a4e8632f3fc06044ee1b5c6",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "tasks",
+                "6a4e8632f3fc06044ee1b5c6"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "ADD WORK LOG",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_secret_0c06}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"content\": \"Worked on the intro for 2 hours.\" // 1-500 chars\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/tasks/6a4e8632f3fc06044ee1b5c6/logs",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "tasks",
+                "6a4e8632f3fc06044ee1b5c6",
+                "logs"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Sub Task",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{supabase_service_role_api_key_0c06}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"title\": \"Subtask Name\",  // Required, 1-100 chars\r\n  \"dueDate\": \"2024-12-31\"   // Optional\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/tasks/6a4e8632f3fc06044ee1b5c6/subtasks",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "tasks",
+                "6a4e8632f3fc06044ee1b5c6",
+                "subtasks"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Subtask",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{supabase_service_role_api_key_0c06}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"title\": \"Subtask Name\",  // Required, 1-100 chars\r\n  \"dueDate\": \"2024-12-31\"   // Optional\r\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/tasks/6a4e8632f3fc06044ee1b5c6/subtasks/6a4e86b8f3fc06044ee1b5cb/toggle",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "tasks",
+                "6a4e8632f3fc06044ee1b5c6",
+                "subtasks",
+                "6a4e86b8f3fc06044ee1b5cb",
+                "toggle"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Focus",
+      "item": [
+        {
+          "name": "Start Focus",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{json_web_token_0c06}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"taskId\": \"6a4e8632f3fc06044ee1b5c6\",\r\n  \"duration\": 25 \r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/focus/start",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "focus",
+                "start"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "New Request",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_secret_0c06}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"status\": \"completed\" // or \"cancelled\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/focus/end",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "focus",
+                "end"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Current Session",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{json_web_token_0c06}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"currentPassword\": \"securepassword123\", \r\n  \"newPassword\": \"hedarpassword12345\" // String, min 6 chars\r\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/focus/current",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "focus",
+                "current"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Session History",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{json_web_token_0c06}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"taskId\": \"6a4e8632f3fc06044ee1b5c6\",\r\n  \"duration\": 25 \r\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/focus/history",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "focus",
+                "history"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "json_web_token_0c06",
+      "secret": true
+    },
+    {
+      "key": "auth_secret_0c06",
+      "secret": true
+    },
+    {
+      "key": "supabase_service_role_api_key_0c06",
+      "secret": true
+    }
+  ]
 }
