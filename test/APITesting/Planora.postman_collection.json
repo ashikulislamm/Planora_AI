@@ -1,0 +1,126 @@
+{
+	"info": {
+		"_postman_id": "c1f2b3a4-5678-90ab-cdef-1234567890ab",
+		"name": "Planora_AI API Test Suite",
+		"description": "Comprehensive API tests covering positive, negative, and boundary scenarios for all backend endpoints.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Register User - Positive",
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"url": {"raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth", "register"]},
+						"body": {"mode": "raw", "raw": "{\n  \"name\": \"Test QA\",\n  \"email\": \"testqa1@planora.com\",\n  \"password\": \"SecurePass123!\"\n}"}
+					}
+				},
+				{
+					"name": "Login User - Positive",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.environment.set(\"token\", jsonData.token);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"url": {"raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"]},
+						"body": {"mode": "raw", "raw": "{\n  \"email\": \"testqa1@planora.com\",\n  \"password\": \"SecurePass123!\"\n}"}
+					}
+				},
+				{
+					"name": "Get Me - Auth Required",
+					"request": {
+						"method": "GET",
+						"header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
+						"url": {"raw": "{{baseUrl}}/auth/me", "host": ["{{baseUrl}}"], "path": ["auth", "me"]}
+					}
+				}
+			]
+		},
+		{
+			"name": "Tasks",
+			"item": [
+				{
+					"name": "Create Task - Positive",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.environment.set(\"taskId\", jsonData.data._id);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{"key": "Authorization", "value": "Bearer {{token}}"},
+							{"key": "Content-Type", "value": "application/json"}
+						],
+						"url": {"raw": "{{baseUrl}}/tasks", "host": ["{{baseUrl}}"], "path": ["tasks"]},
+						"body": {"mode": "raw", "raw": "{\n  \"title\": \"QA Automation Setup\",\n  \"description\": \"Write Postman collections\"\n}"}
+					}
+				},
+				{
+					"name": "Create Task - Missing Title (Negative)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{"key": "Authorization", "value": "Bearer {{token}}"},
+							{"key": "Content-Type", "value": "application/json"}
+						],
+						"url": {"raw": "{{baseUrl}}/tasks", "host": ["{{baseUrl}}"], "path": ["tasks"]},
+						"body": {"mode": "raw", "raw": "{\n  \"description\": \"No title provided\"\n}"}
+					}
+				},
+				{
+					"name": "Get All Tasks",
+					"request": {
+						"method": "GET",
+						"header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
+						"url": {"raw": "{{baseUrl}}/tasks", "host": ["{{baseUrl}}"], "path": ["tasks"]}
+					}
+				}
+			]
+		},
+		{
+			"name": "Focus Space",
+			"item": [
+				{
+					"name": "Start Focus Session",
+					"request": {
+						"method": "POST",
+						"header": [
+							{"key": "Authorization", "value": "Bearer {{token}}"},
+							{"key": "Content-Type", "value": "application/json"}
+						],
+						"url": {"raw": "{{baseUrl}}/focus/start", "host": ["{{baseUrl}}"], "path": ["focus", "start"]},
+						"body": {"mode": "raw", "raw": "{}"}
+					}
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:5000/api",
+			"type": "string"
+		}
+	]
+}
