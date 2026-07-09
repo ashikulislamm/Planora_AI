@@ -1,6 +1,6 @@
-# Exploratory Testing Charter
+# Exploratory Testing Charter - Planora_AI
 
-Exploratory testing is unscripted testing designed to uncover edge cases, race conditions, and UX issues that structured scripts might miss.
+This exploratory testing charter has been documented to support the search for edge cases, layout issues, and potential user experience flaws in the Planora_AI application. The scope focuses on random UI interactions, environment manipulation (such as offline states), data boundary scenarios, and layout responsiveness.
 
 ## 1. Random Interaction Testing
 - Rapidly click "Create Task" multiple times before the modal closes.

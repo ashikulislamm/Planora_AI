@@ -1,6 +1,6 @@
-# Functional Test Cases
+# Functional Test Cases - Planora_AI
 
-This document contains 50+ functional test cases for the Planora_AI application. Each test case verifies a specific requirement within an implemented module.
+I have prepared functional test cases for Planora_AI, including Authentication, Task Management, Focus Space, AI Copilot, Dashboard, Settings, and Navigation. The 'Actual Result' and 'Status' columns are left blank for updates during manual testing.
 
 ## Module: Authentication (AUTH)
 

@@ -1,6 +1,6 @@
-# Regression Test Cases
+# Regression Test Cases - Planora_AI
 
-Regression testing ensures that new changes have not broken existing, stable functionality.
+Analyzed and created regression test suite to ensure that recent updates or changes do not disrupt the existing stable functionality of the Planora_AI application. These cases cover core features across Auth, Tasks, Focus, AI, and UI components.
 
 ## Core Regression Scenarios
 

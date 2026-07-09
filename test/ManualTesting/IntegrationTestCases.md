@@ -1,6 +1,6 @@
-# Integration Test Cases
+# Integration Test Cases - Planora_AI
 
-Integration tests focus on validating workflows across multiple modules and layers of the application.
+Created test scenarios to verify the data flow and system behaviors across different modules of Planora_AI. The scenarios cover critical user workflows, such as user lifecycle transitions, linking tasks to focus sessions, and AI-assisted task generation.
 
 ## Workflow 1: Account Lifecycle
 1. **Precondition**: None.

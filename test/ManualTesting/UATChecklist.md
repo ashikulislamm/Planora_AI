@@ -1,6 +1,6 @@
-# User Acceptance Testing (UAT) Checklist
+# User Acceptance Testing (UAT) Checklist - Planora_AI
 
-This checklist is written from the end-user perspective to ensure the application solves real-world productivity needs.
+Prepared from an end-user perspective to confirm that the application solves productivity workflows and meets user requirements.
 
 ## Scenarios
 

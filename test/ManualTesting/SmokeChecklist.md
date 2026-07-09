@@ -1,6 +1,6 @@
-# Smoke Test Checklist
+# Smoke Test Checklist - Planora_AI
 
-The Smoke Test suite ensures that the critical paths of Planora_AI are functional. If any of these tests fail, the build is rejected for further testing.
+This smoke test checklist is prepared to verify the basic build health of the Planora_AI application. These represent critical happy paths; if any test case in this checklist fails, the build will be rejected from further testing.
 
 ## Checklist
 

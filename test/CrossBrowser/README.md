@@ -1,6 +1,6 @@
 # Cross-Browser Testing Documentation
 
-This document outlines the testing strategy to ensure Planora_AI renders correctly across all major desktop browsers.
+Performed cross browser testing using playwright to ensure Planora_AI renders correctly across all major desktop browsers.
 
 ## Verified Browsers
 - **Google Chrome**: Version 114+ (Primary target)
